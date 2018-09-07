@@ -36,12 +36,12 @@ gulp.task('buildDist', ['cleanDist'], () => {
     entries: ['index.js'],
     debug: false,
     basedir: 'src',
-    standalone: 'himalaya'
+    standalone: 'symplasm'
   }
   return browserify(options)
     .transform(babelify)
     .bundle()
-    .pipe(source('himalaya.js'))
+    .pipe(source('symplasm.js'))
     .pipe(buffer())
     .pipe(sourcemaps.init({
       // loads map from browserify file

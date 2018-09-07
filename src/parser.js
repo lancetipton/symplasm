@@ -25,14 +25,6 @@ export function hasTerminalParent (tagName, stack, terminals) {
   return false
 }
 
-export function rewindStack (stack, newLength, childrenEndPosition, endPosition) {
-  stack[newLength].position.end = endPosition
-  for (let i = newLength + 1, len = stack.length; i < len; i++) {
-    stack[i].position.end = childrenEndPosition
-  }
-  stack.splice(newLength)
-}
-
 export function parse (state) {
   const {tokens, options} = state
   let {stack} = state
@@ -52,10 +44,11 @@ export function parse (state) {
     const tagName = tagToken.content.toLowerCase()
     if (token.close) {
       let index = stack.length
-      let shouldRewind = false
+      let didRewind = false
       while (--index > -1) {
         if (stack[index].tagName === tagName) {
-          shouldRewind = true
+          stack.splice(index)
+          didRewind = true
           break
         }
       }
@@ -64,8 +57,7 @@ export function parse (state) {
         if (endToken.type !== 'tag-end') break
         cursor++
       }
-      if (shouldRewind) {
-        rewindStack(stack, index, token.position.start, tokens[cursor - 1].position.end)
+      if (didRewind) {
         break
       } else {
         continue
@@ -85,7 +77,7 @@ export function parse (state) {
       let currentIndex = stack.length - 1
       while (currentIndex > 0) {
         if (tagName === stack[currentIndex].tagName) {
-          rewindStack(stack, currentIndex, token.position.start, token.position.start)
+          stack = stack.slice(0, currentIndex)
           const previousIndex = currentIndex - 1
           nodes = stack[previousIndex].children
           break
@@ -105,29 +97,19 @@ export function parse (state) {
 
     cursor++
     const children = []
-    const position = {
-      start: token.position.start,
-      end: attrToken.position.end
-    }
-    const elementNode = {
+    nodes.push({
       type: 'element',
       tagName: tagToken.content,
       attributes,
-      children,
-      position
-    }
-    nodes.push(elementNode)
+      children
+    })
 
     const hasChildren = !(attrToken.close || arrayIncludes(options.voidTags, tagName))
     if (hasChildren) {
-      const size = stack.push({tagName, children, position})
+      stack.push({tagName, children})
       const innerState = {tokens, options, cursor, stack}
       parse(innerState)
       cursor = innerState.cursor
-      const rewoundInElement = stack.length === size
-      if (rewoundInElement) {
-        elementNode.position.end = tokens[cursor - 1].position.end
-      }
     }
   }
   state.cursor = cursor

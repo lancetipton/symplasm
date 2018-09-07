@@ -1,8 +1,7 @@
 import lexer from './lexer'
 import parser from './parser'
-import {format} from './format'
 import {toHTML} from './stringify'
-import {formatCell} from './cell'
+import { formatFS } from './format'
 
 import {
   voidTags,
@@ -10,6 +9,7 @@ import {
   childlessTags,
   closingTagAncestorBreakers
 } from './tags'
+
 
 export const parseDefaults = {
   voidTags,
@@ -23,7 +23,7 @@ export function parse (str) {
   let options = Object.assign(parseDefaults, arguments[1])
   const tokens = lexer(str, options)
   const nodes = parser(tokens, options)
-  return !options.cell ? format(nodes, options) : formatCell(nodes, options)
+  return formatFS(nodes, options)
 }
 
 export function stringify (ast, options = parseDefaults) {

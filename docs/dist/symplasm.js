@@ -1,124 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.himalaya = f()}})(function(){var define,module,exports;return (function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.formatCell = formatCell;
-exports.formatAttributes = formatAttributes;
-exports.format = format;
-exports.filterCell = filterCell;
-exports.mapCell = mapCell;
-
-var _format = require('./format');
-
-var options = {
-  root: {
-    type: 'div',
-    class: 'cell-root',
-    active: true
-  },
-  trim: false,
-  lowerCaseTag: true
-};
-
-function formatCell(nodes, _options) {
-  Object.assign(options, _options);
-  var rootCell = {
-    $type: options.root.type,
-    class: options.root.class,
-    $cell: options.root.active
-  };
-  rootCell['$components'] = format(nodes, rootCell);
-  return rootCell;
-}
-
-function formatAttributes(attributes, cell) {
-  attributes.map(function (attribute) {
-    var parts = (0, _format.splitHead)(attribute.trim(), '=');
-    var key = parts[0];
-    var value = typeof parts[1] === 'string' ? formatValue(parts[0], parts[1]) : null;
-    cell[key] = value;
-  });
-  return cell;
-}
-
-function formatValue(key, value) {
-  if (key.indexOf('_') === 0 && options.convertAttrs) {
-    try {
-      return JSON.parse((0, _format.unquote)(value));
-    } catch (e) {}
-  }
-  return (0, _format.unquote)(value);
-}
-
-function filterCell(node, parent) {
-  var start = '';
-  var end = '';
-  var text = node.content;
-  if (node.type === 'comment') {
-    start = '<!--';
-    end = '-->';
-  }
-  if (options.trim) {
-    if (node.content.trim() !== '\n' && node.content.replace(/\s/g, '').length > 0) {
-      text = node.content.trim();
-    } else {
-      text = null;
-    }
-  }
-  if (text) {
-    parent.$html = parent.$html || '';
-    parent.$html += start + text + end;
-  }
-  return false;
-}
-
-function format(nodes, parent) {
-  return nodes.filter(function (node) {
-    if (node.type === 'text' || node.type === 'comment') {
-      return filterCell(node, parent);
-    }
-    return node;
-  }).map(function (node) {
-    return mapCell(node);
-  });
-}
-
-function filterCell(node, parent) {
-  var start = '';
-  var end = '';
-  var text = node.content;
-  if (node.type === 'comment') {
-    start = '<!--';
-    end = '-->';
-  }
-  if (options.trim) {
-    if (node.content.trim() !== '\n' && node.content.replace(/\s/g, '').length > 0) {
-      text = node.content.trim();
-    } else {
-      text = null;
-    }
-  }
-  if (text) {
-    parent.$html = parent.$html || '';
-    parent.$html += start + text + end;
-  }
-  return false;
-}
-
-function mapCell(node) {
-  var cell = {};
-  cell.$type = options.lowerCaseTag ? node.tagName.toLowerCase() : node.tagName;
-  formatAttributes(node.attributes, cell);
-  var childComponents = format(node.children, cell);
-  if (childComponents.length > 0) {
-    cell.$components = childComponents;
-  }
-  return cell;
-}
-
-},{"./format":3}],2:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.symplasm = f()}})(function(){var define,module,exports;return (function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -171,16 +51,89 @@ function arrayIncludes(array, searchElement, position) {
   return false;
 }
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.splitHead = splitHead;
-exports.unquote = unquote;
-exports.format = format;
-exports.formatAttributes = formatAttributes;
+exports.formatFS = formatFS;
+var options = {
+  root: {
+    0: 'div',
+    1: {
+      className: 'root-node',
+      active: true
+    }
+  },
+  trim: false,
+  lowerCaseTag: true
+};
+
+function formatFS(nodes, _options) {
+  Object.assign(options, _options);
+  var rootFS = Object.assign({}, options.root);
+  rootFS[2] = format(nodes, rootFS);
+  return rootFS;
+}
+
+function formatAttributes(attributes, block) {
+  var attrs = {};
+
+  attributes && attributes.map(function (attribute) {
+    var parts = splitHead(attribute.trim(), '=');
+    var key = parts[0];
+    var value = typeof parts[1] === 'string' ? formatValue(parts[0], parts[1]) : null;
+    attrs[key] = value;
+  });
+  block[1] = attrs;
+  return block;
+}
+
+function format(nodes, parent) {
+  return nodes ? nodes.reduce(function (children, node) {
+    var child = node.type === 'text' || node.type === 'comment' ? filterFS(node, parent) : map(node);
+    child && children.push(child);
+    return children;
+  }, []) : [];
+}
+
+function formatValue(key, value) {
+  if (key.indexOf('_') === 0 && options.convertAttrs) {
+    try {
+      return JSON.parse(unquote(value));
+    } catch (e) {}
+  }
+  return unquote(value);
+}
+
+function filterFS(node, parent) {
+  var start = '';
+  var end = '';
+  var text = node.content;
+  if (node.type === 'comment') {
+    start = '<!--';
+    end = '-->';
+  }
+  if (options.trim) {
+    return node.content.trim() !== '\n' && node.content.replace(/\s/g, '').length > 0 ? start + node.content.trim() + end : null;
+  }
+  return text ? start + text + end : null;
+}
+
+function map(node) {
+  var block = {};
+  block[0] = options.lowerCaseTag ? node.tagName.toLowerCase() : node.tagName;
+
+  block = formatAttributes(node.attributes, block);
+
+  var childComponents = format(node.children, block);
+  if (childComponents.length > 0) {
+    block[2] = childComponents;
+  }
+  return block;
+}
+
 function splitHead(str, sep) {
   var idx = str.indexOf(sep);
   if (idx === -1) return [str];
@@ -197,32 +150,7 @@ function unquote(str) {
   return str;
 }
 
-function format(nodes, options) {
-  return nodes.map(function (node) {
-    var type = node.type;
-    var outputNode = type === 'element' ? {
-      type: type,
-      tagName: node.tagName.toLowerCase(),
-      attributes: formatAttributes(node.attributes),
-      children: format(node.children, options)
-    } : { type: type, content: node.content };
-    if (options.includePositions) {
-      outputNode.position = node.position;
-    }
-    return outputNode;
-  });
-}
-
-function formatAttributes(attributes) {
-  return attributes.map(function (attribute) {
-    var parts = splitHead(attribute.trim(), '=');
-    var key = parts[0];
-    var value = typeof parts[1] === 'string' ? unquote(parts[1]) : null;
-    return { key: key, value: value };
-  });
-}
-
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -240,11 +168,9 @@ var _parser = require('./parser');
 
 var _parser2 = _interopRequireDefault(_parser);
 
-var _format = require('./format');
-
 var _stringify = require('./stringify');
 
-var _cell = require('./cell');
+var _format = require('./format');
 
 var _tags = require('./tags');
 
@@ -262,7 +188,7 @@ function parse(str) {
   var options = Object.assign(parseDefaults, arguments[1]);
   var tokens = (0, _lexer2.default)(str, options);
   var nodes = (0, _parser2.default)(tokens, options);
-  return !options.cell ? (0, _format.format)(nodes, options) : (0, _cell.formatCell)(nodes, options);
+  return (0, _format.formatFS)(nodes, options);
 }
 
 function stringify(ast) {
@@ -271,7 +197,7 @@ function stringify(ast) {
   return (0, _stringify.toHTML)(ast, options);
 }
 
-},{"./cell":1,"./format":3,"./lexer":5,"./parser":6,"./stringify":7,"./tags":8}],5:[function(require,module,exports){
+},{"./format":2,"./lexer":4,"./parser":5,"./stringify":6,"./tags":7}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -616,7 +542,7 @@ function lexSkipTag(tagName, state) {
   }
 }
 
-},{"./compat":2}],6:[function(require,module,exports){
+},{"./compat":1}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -624,7 +550,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = parser;
 exports.hasTerminalParent = hasTerminalParent;
-exports.rewindStack = rewindStack;
 exports.parse = parse;
 
 var _compat = require('./compat');
@@ -654,14 +579,6 @@ function hasTerminalParent(tagName, stack, terminals) {
   return false;
 }
 
-function rewindStack(stack, newLength, childrenEndPosition, endPosition) {
-  stack[newLength].position.end = endPosition;
-  for (var i = newLength + 1, len = stack.length; i < len; i++) {
-    stack[i].position.end = childrenEndPosition;
-  }
-  stack.splice(newLength);
-}
-
 function parse(state) {
   var tokens = state.tokens,
       options = state.options;
@@ -684,10 +601,11 @@ function parse(state) {
     var tagName = tagToken.content.toLowerCase();
     if (token.close) {
       var index = stack.length;
-      var shouldRewind = false;
+      var didRewind = false;
       while (--index > -1) {
         if (stack[index].tagName === tagName) {
-          shouldRewind = true;
+          stack.splice(index);
+          didRewind = true;
           break;
         }
       }
@@ -696,8 +614,7 @@ function parse(state) {
         if (endToken.type !== 'tag-end') break;
         cursor++;
       }
-      if (shouldRewind) {
-        rewindStack(stack, index, token.position.start, tokens[cursor - 1].position.end);
+      if (didRewind) {
         break;
       } else {
         continue;
@@ -718,7 +635,7 @@ function parse(state) {
       var currentIndex = stack.length - 1;
       while (currentIndex > 0) {
         if (tagName === stack[currentIndex].tagName) {
-          rewindStack(stack, currentIndex, token.position.start, token.position.start);
+          stack = stack.slice(0, currentIndex);
           var previousIndex = currentIndex - 1;
           nodes = stack[previousIndex].children;
           break;
@@ -738,35 +655,25 @@ function parse(state) {
 
     cursor++;
     var children = [];
-    var position = {
-      start: token.position.start,
-      end: attrToken.position.end
-    };
-    var elementNode = {
+    nodes.push({
       type: 'element',
       tagName: tagToken.content,
       attributes: attributes,
-      children: children,
-      position: position
-    };
-    nodes.push(elementNode);
+      children: children
+    });
 
     var hasChildren = !(attrToken.close || (0, _compat.arrayIncludes)(options.voidTags, tagName));
     if (hasChildren) {
-      var size = stack.push({ tagName: tagName, children: children, position: position });
+      stack.push({ tagName: tagName, children: children });
       var innerState = { tokens: tokens, options: options, cursor: cursor, stack: stack };
       parse(innerState);
       cursor = innerState.cursor;
-      var rewoundInElement = stack.length === size;
-      if (rewoundInElement) {
-        elementNode.position.end = tokens[cursor - 1].position.end;
-      }
     }
   }
   state.cursor = cursor;
 }
 
-},{"./compat":2}],7:[function(require,module,exports){
+},{"./compat":1}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -810,7 +717,7 @@ function toHTML(tree, options) {
 
 exports.default = { toHTML: toHTML };
 
-},{"./compat":2}],8:[function(require,module,exports){
+},{"./compat":1}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -851,6 +758,6 @@ var closingTagAncestorBreakers = exports.closingTagAncestorBreakers = {
   */
 };var voidTags = exports.voidTags = ['!doctype', 'area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
 
-},{}]},{},[4])(4)
+},{}]},{},[3])(3)
 });
-//# sourceMappingURL=himalaya.js.map
+//# sourceMappingURL=symplasm.js.map

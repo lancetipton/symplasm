@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Himalaya</title>
+    <title>Symplasm</title>
     <style>
       * {
         font-family: monospace;
@@ -37,12 +37,19 @@
       header a:hover {
         text-decoration: underline;
       }
-
+      
+      .desscription {
+        align-items: center;
+        justify-content: center;
+        padding: 0px 20px;
+      }
+      
       .converter {
         display: flex;
         flex: 1;
         align-items: center;
         justify-content: center;
+        max-height: 30vh;
       }
 
       .pane {
@@ -85,23 +92,57 @@
   <body>
     <div class='page'>
       <header>
-        <h1>Himalaya</h1>
-        <a href='https://github.com/andrejewski/himalaya'>on Github</a>
-        <a href='http://chrisandrejewski.com'>by Chris Andrejewski</a>
+        <h1>Symplasm</h1>
+        <a href='https://github.com/andrejewski/himalaya'>symplasm on Github</a>
+        |
+        <a href='https://github.com/intercellular/cell'>Cell on Github</a>
+        |
+        <a href='https://github.com/lancetipton/symplasm'>Symplasm on Github</a>
       </header>
+      <div class='desscription'>
+        <p>
+          Export JSON in Standard / Firestore / Cell format.
+        </p>
+      </div>
       <div class='converter'>
         <div class='pane pane-source'>
           <label>html</label>
-          <textarea id='source' placeholder='<div>HTML to transform</div>'></textarea>
+          <textarea id='source' placeholder='<div>HTML to transform</div>'>
+          </textarea>
         </div>
         <div class='pane pane-output'>
           <label>json (ast)</label>
           <pre id='output'></pre>
         </div>
       </div>
+      
+      <div class='desscription' >
+        <p><b>Options</b></p>
+        <div>
+          {
+            br/>
+            &nbsp;&nbsp;cell: true, <b>// Tells Symplasm to export in Cell.js format</b>
+            <br/>
+            &nbsp;&nbsp;cell: true, <b>// Tells Symplasm to export in Cell.js format</b>
+            <br/>
+            &nbsp;&nbsp;active: true, <b>// Adds $cell: true to JSON export</b>
+            <br/>
+            &nbsp;&nbsp;trim: true, <b>// Removes all white-space</b>
+            <br/>
+            &nbsp;&nbsp;lowerCaseTag: false, <b>// Skips tag lowercase i.e. '&lt;Foo&gt;' == { '$type': 'Foo' }</b>
+            <br/>
+             &nbsp;&nbsp;convertAttrs: true,
+            <b>// Converts _attributes to Objects / Arrays</b>
+            <br/>
+            &nbsp;&nbsp;root:{ class: 'root', type: 'html', active: false }, <b>// Override default root element</b>
+            <br/>
+          }
+        </div>
+      </div>
+      
     </div>
 
-    <script src='dist/himalaya.js'></script>
+    <script src='dist/symplasm.js'></script>
     <script>
       function $ (selector) {
         return document.querySelector(selector)
@@ -109,7 +150,13 @@
 
       function updateOutput () {
         var html = $('#source').value || ''
-        var code = himalaya.parse(html)
+        var code = symplasm.parse(html, {
+          cell:
+          true,
+          trim: true,
+          convertAttrs: true,
+          lowerCaseTag: false 
+        })
         $('#output').innerText = JSON.stringify(code, null, 2)
       }
 

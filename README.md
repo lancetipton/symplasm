@@ -1,5 +1,5 @@
-# Himalaya
-http://andrejewski.github.io/himalaya
+# Symplasm
+http://andrejewski.github.io/symplasm
 > Parse HTML into JSON
 
 # Cell
@@ -14,7 +14,7 @@ https://www.celljs.org/
 
 ```html
 <div class='post post-featured'>
-  <p>Himalaya parsed me...</p>
+  <p>Symplasm parsed me...</p>
   <!-- ...and I liked it. -->
 </div>
 ```
@@ -33,7 +33,7 @@ https://www.celljs.org/
     attributes: [],
     children: [{
       type: 'text',
-      content: 'Himalaya parsed me...'
+      content: 'Symplasm parsed me...'
     }]
   }, {
     type: 'comment',
