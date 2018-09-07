@@ -57,57 +57,157 @@ function arrayIncludes(array, searchElement, position) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.formatFS = formatFS;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var options = {
   root: {
     0: 'div',
     1: {
-      className: 'root-node',
-      active: true
+      class: 'root-node'
     }
   },
+  tagConvert: {},
+  attrKeyConvert: {},
+  attrValueConvert: {},
   trim: false,
   lowerCaseTag: true
+
+  // ----------- Converters ----------- //
+};var convertCase = function convertCase(text) {
+  var converted = '';
+  var text_split = text.split('-');
+  if (!text_split.length) return text;
+  converted += text_split.shift();
+  text_split.map(function (val) {
+    converted += val.charAt(0).toUpperCase() + val.slice(1);
+  });
+  return converted;
 };
 
-function formatFS(nodes, _options) {
-  Object.assign(options, _options);
-  var rootFS = Object.assign({}, options.root);
-  rootFS[2] = format(nodes, rootFS);
-  return rootFS;
-}
+var convertStyle = function convertStyle(styles) {
+  var valObj = {};
+  var val_split = styles.trim().split(';');
 
-function formatAttributes(attributes, block) {
-  var attrs = {};
-
-  attributes && attributes.map(function (attribute) {
-    var parts = splitHead(attribute.trim(), '=');
-    var key = parts[0];
-    var value = typeof parts[1] === 'string' ? formatValue(parts[0], parts[1]) : null;
-    attrs[key] = value;
+  Array.isArray(val_split) && val_split[0].trim() !== '' && val_split.map(function (item) {
+    if (item.indexOf(':') !== -1) {
+      var item_split = item.split(':');
+      if (Array.isArray(item_split) && item_split.length === 2) {
+        if (item_split[0].trim() !== '' && item_split[1].trim() !== '') {
+          valObj[convertCase(item_split[0].trim())] = item_split[1].trim();
+        }
+      }
+    }
   });
-  block[1] = attrs;
-  return block;
-}
 
-function format(nodes, parent) {
-  return nodes ? nodes.reduce(function (children, node) {
-    var child = node.type === 'text' || node.type === 'comment' ? filterFS(node, parent) : map(node);
+  return valObj;
+};
+
+var convertBlock = function convertBlock(block, nodes, children) {
+  block[0] = options.tagConvert[block[0]] ? runAction(options.tagConvert[block[0]], block, '$$DOM_NODE_NAME', block[0], nodes, children) : block[0];
+
+  block[1] = _typeof(block[1]) === 'object' ? Object.keys(block[1]).reduce(function (attrs, key) {
+    var useKey = options.attrKeyConvert[key] ? runAction(options.attrKeyConvert[key], block, key, block[1][key], nodes, children) : key;
+
+    if (useKey && block[1][key]) {
+      attrs[useKey] = options.attrValueConvert[key] ? runAction(options.attrValueConvert[key], block, key, block[1][key], nodes, children) : unquote(block[1][key]);
+    }
+
+    return attrs;
+  }, {}) : {};
+
+  if (block[2] && typeof block[2] !== 'string' && block[2].length) {
+    block[2] = block[2].map(function (child) {
+      return convertBlock(child, nodes, children);
+    });
+  }
+
+  return block;
+};
+
+var tagConvert = function tagConvert(action, block, node, value, nodes, children) {
+  block[0] = options.lowerCaseTag ? node.tagName.toLowerCase() : node.tagName;
+
+  if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && !Array.isArray(action) && action[0]) {
+    block[0] = action[0];
+    block[1] = action[1] || {};
+    if (action[2]) block[2] = action[2];
+    block = convertBlock(block, nodes, children);
+  } else block[0] = runAction(action, node, '$$DOM_NODE_NAME', value, nodes, children);
+
+  return block;
+};
+
+// ----------- Run options methods ----------- //
+var runAction = function runAction(action, node, key, value, nodes, children) {
+  return typeof action === 'function' ? action(node, key, value, nodes, children, options) : action;
+};
+
+// ----------- Formatters ----------- //
+var format = function format(childs, parent, nodes, children) {
+  return childs ? childs.reduce(function (children, node) {
+    nodes = nodes || childs;
+    var child = node.type === 'text' || node.type === 'comment' ? filterFS(node, parent) : formatNode(node, childs, nodes, children);
     child && children.push(child);
     return children;
   }, []) : [];
-}
+};
 
-function formatValue(key, value) {
-  if (key.indexOf('_') === 0 && options.convertAttrs) {
-    try {
-      return JSON.parse(unquote(value));
-    } catch (e) {}
+var formatNode = function formatNode(node, nodes, children) {
+
+  var block = options.tagConvert[node.tagName] ? tagConvert(options.tagConvert[node.tagName], {}, node, node.tagName, nodes, children) : { 0: node.tagName };
+
+  var attrs = formatAttributes(node, node.attributes, nodes, children);
+  block[1] = Object.assign({}, attrs, block[1]);
+
+  var childs = format(node.children, block, nodes, children);
+  return addChildren(block, childs);
+};
+
+var formatAttributes = function formatAttributes(node, attributes, nodes, children) {
+  var attrs = {};
+
+  attributes && attributes.map(function (attribute) {
+    var parts = splitKeyValue(attribute.trim(), '=');
+    var key = options.attrKeyConvert && options.attrKeyConvert[parts[0]] ? runAction(options.attrKeyConvert[parts[0]], node, key, parts[1], nodes, children) : parts[0];
+
+    var value = typeof parts[1] === 'string' ? formatValue(node, parts[0], parts[1], nodes, children) : null;
+    if (key && value) attrs[key] = value;
+  });
+  return attrs;
+};
+
+var formatValue = function formatValue(node, key, value, nodes, children) {
+  return key === 'style' && typeof value === 'string' ? convertStyle(unquote(value)) : options.attrValueConvert[key] ? runAction(options.attrValueConvert[key], node, key, unquote(value), nodes, children) : unquote(value);
+};
+
+// ----------- Helpers ----------- //
+var addChildren = function addChildren(block, childs) {
+  var addChilds = childs.length === 1 && typeof childs[0] === 'string' ? childs[0] : childs.length && childs || null;
+
+  if (addChilds) {
+    if (!block[2]) block[2] = addChilds;else if (Array.isArray(block[2])) block[2] = block[2].concat(addChilds);else block[2] = [block[2]].concat(addChilds);
   }
-  return unquote(value);
-}
+  return block;
+};
 
-function filterFS(node, parent) {
+var splitKeyValue = function splitKeyValue(str, sep) {
+  var idx = str.indexOf(sep);
+  if (idx === -1) return [str];
+  return [str.slice(0, idx), str.slice(idx + sep.length)];
+};
+
+var unquote = function unquote(str) {
+  var car = str.charAt(0);
+  var end = str.length - 1;
+  var isQuoteStart = car === '"' || car === "'";
+  if (isQuoteStart && car === str.charAt(end)) {
+    return str.slice(1, end);
+  }
+  return str;
+};
+
+var filterFS = function filterFS(node) {
   var start = '';
   var end = '';
   var text = node.content;
@@ -119,36 +219,15 @@ function filterFS(node, parent) {
     return node.content.trim() !== '\n' && node.content.replace(/\s/g, '').length > 0 ? start + node.content.trim() + end : null;
   }
   return text ? start + text + end : null;
-}
+};
 
-function map(node) {
-  var block = {};
-  block[0] = options.lowerCaseTag ? node.tagName.toLowerCase() : node.tagName;
+var formatFS = exports.formatFS = function formatFS(nodes, _options) {
+  Object.assign(options, _options);
+  var rootFS = convertBlock(Object.assign({}, options.root), nodes);
+  var children = format(nodes, rootFS);
 
-  block = formatAttributes(node.attributes, block);
-
-  var childComponents = format(node.children, block);
-  if (childComponents.length > 0) {
-    block[2] = childComponents;
-  }
-  return block;
-}
-
-function splitHead(str, sep) {
-  var idx = str.indexOf(sep);
-  if (idx === -1) return [str];
-  return [str.slice(0, idx), str.slice(idx + sep.length)];
-}
-
-function unquote(str) {
-  var car = str.charAt(0);
-  var end = str.length - 1;
-  var isQuoteStart = car === '"' || car === "'";
-  if (isQuoteStart && car === str.charAt(end)) {
-    return str.slice(1, end);
-  }
-  return str;
-}
+  return addChildren(rootFS, children);
+};
 
 },{}],3:[function(require,module,exports){
 'use strict';
@@ -194,7 +273,7 @@ function parse(str) {
 function stringify(ast) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : parseDefaults;
 
-  return (0, _stringify.toHTML)(ast, options);
+  return Array.isArray(ast) ? (0, _stringify.toHTML)(ast, options) : (0, _stringify.toHTML)([ast], options);
 }
 
 },{"./format":2,"./lexer":4,"./parser":5,"./stringify":6,"./tags":7}],4:[function(require,module,exports){
@@ -679,36 +758,46 @@ function parse(state) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 exports.formatAttributes = formatAttributes;
 exports.toHTML = toHTML;
 
 var _compat = require('./compat');
 
 function formatAttributes(attributes) {
-  return attributes.reduce(function (attrs, attribute) {
-    var key = attribute.key,
-        value = attribute.value;
-
-    if (value === null) {
-      return attrs + ' ' + key;
+  return Object.keys(attributes).reduce(function (attrs, key) {
+    var value = attributes[key];
+    if (!value) return attrs + ' ' + key;else if (key === 'style' && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object') {
+      var styles = '';
+      Object.keys(value).map(function (name) {
+        styles += name + ':' + value[name] + ';';
+      });
+      var quoteEscape = styles.indexOf('\'') !== -1;
+      var quote = quoteEscape ? '"' : '\'';
+      return attrs + ' ' + key + '=' + quote + styles + quote;
     }
-    var quoteEscape = value.indexOf('\'') !== -1;
-    var quote = quoteEscape ? '"' : '\'';
-    return attrs + ' ' + key + '=' + quote + value + quote;
+
+    if (typeof value === 'string') {
+      var _quoteEscape = value.indexOf('\'') !== -1;
+      var _quote = _quoteEscape ? '"' : '\'';
+      return attrs + ' ' + key + '=' + _quote + value + _quote;
+    }
   }, '');
 }
 
 function toHTML(tree, options) {
-  return tree.map(function (node) {
-    if (node.type === 'text') {
-      return node.content;
-    }
-    if (node.type === 'comment') {
-      return '<!--' + node.content + '-->';
-    }
-    var tagName = node.tagName,
-        attributes = node.attributes,
-        children = node.children;
+  if (typeof tree === 'string') return tree;
+  console.log('------------------tree------------------');
+  console.log(tree);
+
+  return tree && tree.map(function (node) {
+    if (typeof node === 'string') return node;
+    if (node.type === 'comment') return '<!--' + node.content + '-->';
+    var tagName = node[0];
+    var attributes = node[1];
+    var children = node[2];
 
     var isSelfClosing = (0, _compat.arrayIncludes)(options.voidTags, tagName.toLowerCase());
     return isSelfClosing ? '<' + tagName + formatAttributes(attributes) + '>' : '<' + tagName + formatAttributes(attributes) + '>' + toHTML(children, options) + '</' + tagName + '>';

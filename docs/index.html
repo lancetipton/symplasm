@@ -7,12 +7,6 @@
       }
 
       .page {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-
         display: flex;
         flex-direction: column;
       }
@@ -20,7 +14,7 @@
       header {
         display: flex;
         align-items: center;
-        padding: 20px 20px 0;
+        padding: 0px 20px 0;
       }
 
       header h1 {
@@ -38,7 +32,7 @@
         text-decoration: underline;
       }
       
-      .desscription {
+      .description {
         align-items: center;
         justify-content: center;
         padding: 0px 20px;
@@ -49,20 +43,26 @@
         flex: 1;
         align-items: center;
         justify-content: center;
-        max-height: 30vh;
+        min-height: 300px;
       }
-
-      .pane {
+      .converter > div {
         display: flex;
         flex-direction: column;
         flex: 1;
         align-self: stretch;
-        padding: 20px;
+        padding: 0px 20px;
+      }
+
+      .pane {
+        padding: 10px;
         font-size: 1em;
         border: none;
         margin: 0px;
         outline: none;
         overflow: auto;
+        background: #f1f1f1;
+        padding: 10px;
+        min-height: 300px;
       }
 
       .pane label {
@@ -83,6 +83,20 @@
         font-size: inherit;
       }
 
+      textarea {
+        flex: 1;
+        display: flex;
+        align-self: stretch;
+        width: 350px;
+        height: 175px;
+        border: none;
+        background-color: transparent;
+        outline: none;
+        padding: 0px;
+        font-size: inherit;
+        resize: none;
+      }
+
       #output {
         margin: 0;
         padding: 0;
@@ -93,73 +107,185 @@
     <div class='page'>
       <header>
         <h1>Symplasm</h1>
-        <a href='https://github.com/andrejewski/himalaya'>symplasm on Github</a>
-        |
-        <a href='https://github.com/intercellular/cell'>Cell on Github</a>
-        |
         <a href='https://github.com/lancetipton/symplasm'>Symplasm on Github</a>
       </header>
-      <div class='desscription'>
+      <div class='description'>
         <p>
-          Export JSON in Standard / Firestore / Cell format.
+          Export JSON in vDom format.
         </p>
       </div>
       <div class='converter'>
-        <div class='pane pane-source'>
-          <label>html</label>
-          <textarea id='source' placeholder='<div>HTML to transform</div>'>
-          </textarea>
+        <div>
+          <label><b>HTML</b></label>
+          <div class='pane pane-source'>
+            <textarea id='source' placeholder='<div>HTML to transform</div>'>
+<div class="super" id="duper" style="font-family:'Helvetica Bold';" >
+  <h3 id="bar" >I should be h1</h3>
+  <img src="./foo-bar.jpg" >
+  <p class="foo" style="color:blue; background-color:green; margin-top:20px;" >
+    I should be a span
+    <div name="I get replaced" >I should exist</div>
+  </p>
+</div>
+            </textarea>
+          </div>
         </div>
-        <div class='pane pane-output'>
-          <label>json (ast)</label>
-          <pre id='output'></pre>
+        <div>
+          <label><b>JSON (ast)</b></label>
+          <div class='pane pane-output'>
+            <pre id='output'></pre>
+          </div>
+        </div>
+        <div >
+          <label><b>OPTIONS</b></label>
+          <div class='pane pane-output'>
+            <pre id="options" ></pre>
+          </div>
+        </div>
+      </div>
+
+      <br>
+      <br>
+      <br>
+      <br>
+      
+      <div >
+        <div >
+          <label><b>Exported String</b></label>
+          <div class='pane pane-source'>
+            <div id="converted-html" ></div>
+          </div>
+        </div>
+      </div>
+
+      <br>
+      <br>
+      
+      <div class='description' >
+        <br>
+        <h3>--------- API Methods ---------</h3>
+        <div>
+            <p>
+              import <b>symplasm</b> from  <b>'./path/to/symplasm'</b>
+              <br>
+              <br>
+              var code = symplasm.parse('html string', options)
+              <br>
+              var htmlString = symplasm.stringify('html string', options)
+            </p>
         </div>
       </div>
       
-      <div class='desscription' >
-        <p><b>Options</b></p>
+      <div class='description' >
+        <h3>--------- Symplasm Options ---------</h3>
         <div>
-          {
-            br/>
-            &nbsp;&nbsp;cell: true, <b>// Tells Symplasm to export in Cell.js format</b>
-            <br/>
-            &nbsp;&nbsp;cell: true, <b>// Tells Symplasm to export in Cell.js format</b>
-            <br/>
-            &nbsp;&nbsp;active: true, <b>// Adds $cell: true to JSON export</b>
             <br/>
             &nbsp;&nbsp;trim: true, <b>// Removes all white-space</b>
             <br/>
-            &nbsp;&nbsp;lowerCaseTag: false, <b>// Skips tag lowercase i.e. '&lt;Foo&gt;' == { '$type': 'Foo' }</b>
             <br/>
-             &nbsp;&nbsp;convertAttrs: true,
-            <b>// Converts _attributes to Objects / Arrays</b>
+            &nbsp;&nbsp;lowerCaseTag: false, <b>// Skips tag lowercase</b>
             <br/>
-            &nbsp;&nbsp;root:{ class: 'root', type: 'html', active: false }, <b>// Override default root element</b>
             <br/>
-          }
+            &nbsp;&nbsp;root: {}, <b>// Override default root element, using vdom format. Children will be added before the parsed HTML</b>
+            
+            <textarea disabled >
+              
+    EXAMPLE:  {
+                0: 'div',
+                1: { class: 'root' },
+                2: [ ...children ],
+              },
+
+            </textarea>
+            <br/>
+            <br/>
+             &nbsp;&nbsp;tagConvert: {}, <b>// Key pair of html tag names, and how to convert them</b>
+             <textarea disabled >
+               
+    EXAMPLE:  {
+                div: 'View',
+                img: {
+                  0: 'Image',
+                  1: { 
+                    src: './image.png'
+                  }
+              }
+
+              </textarea>
+            <br/>
+             &nbsp;&nbsp;attrKeyConvert: {}, <b>// Key pair of html attributes, and how to convert them</b>
+             <textarea disabled >
+               
+    EXAMPLE:  {
+                class: 'className',
+                id: () => {
+                  return uuid.v4()
+                }
+              }
+
+              </textarea>
+            <br/>
         </div>
       </div>
-      
     </div>
 
     <script src='dist/symplasm.js'></script>
     <script>
+      var counter = 0
       function $ (selector) {
         return document.querySelector(selector)
+      }
+      var options = {
+        trim: true,
+        lowerCaseTag: false,
+        root: {
+          0: 'article',
+          1: { class: 'duper' },
+          2: [{
+            0: 'div',
+            1: { class: 'added-child' },
+            2: 'Sub-Sub-Added Child'
+          }],
+        },
+        tagConvert: {
+          article: 'section',
+          img: {
+            0: 'Image',
+            1: { 
+              src: './image.png'
+            }
+          },
+          p: {
+            0: 'span',
+            1: { class: 'converted' },
+            2: 'I get added as the first child to the span'
+          },
+          h3: function(element, key, value, allNodes, children, options){
+            return 'h1'
+          }
+        },
+        attrKeyConvert: {
+          class: 'className',
+          id: function(element, key, value, allNodes, children, options){
+            return 'td-id'
+          }
+        },
+        attrValueConvert: {
+          name: 'replaced-attribute',
+          id: function(element, key, value, allNodes, children, options){
+            return 'td-' + counter++
+          }
+        }
       }
 
       function updateOutput () {
         var html = $('#source').value || ''
-        var code = symplasm.parse(html, {
-          cell:
-          true,
-          trim: true,
-          convertAttrs: true,
-          lowerCaseTag: false 
-        })
+        var code = symplasm.parse(html, options)
         $('#output').innerText = JSON.stringify(code, null, 2)
+        $('#converted-html').innerText = symplasm.stringify(code)
       }
 
+      $('#options').innerText = JSON.stringify(options, null, 2)
       $('#source').onkeyup = updateOutput
       updateOutput()
     </script>

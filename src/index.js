@@ -27,5 +27,7 @@ export function parse (str) {
 }
 
 export function stringify (ast, options = parseDefaults) {
-  return toHTML(ast, options)
+  return Array.isArray(ast)
+    ? toHTML(ast, options)
+    : toHTML([ast], options)
 }
