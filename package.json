@@ -1,0 +1,52 @@
+{
+  "name": "symplasm",
+  "description": "HTML to JSON parser",
+  "version": "1.0.0",
+  "author": "Lance Tipton <ltipton@tiptondigital.com>",
+  "bugs": {
+    "url": "https://github.com/lancetipton/symplasm/issues"
+  },
+  "devDependencies": {
+    "ava": "^0.25.0",
+    "babel-core": "^6.24.0",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-istanbul": "^4.0.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
+    "babelify": "^8.0.0",
+    "browserify": "^16.0.0",
+    "del": "^3.0.0",
+    "fixpack": "^2.3.1",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.0",
+    "gulp-sourcemaps": "^2.1.1",
+    "nyc": "^11.0.2",
+    "source-map-support": "^0.5.0",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "homepage": "https://github.com/lancetipton/symplasm",
+  "keywords": [
+    "ast",
+    "html",
+    "json",
+    "parser"
+  ],
+  "license": "ISC",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lancetipton/symplasm.git"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "symplasm": "./bin/symplasm.js",
+    "test": "fixpack && gulp --silent"
+  },
+  "standard": {
+    "ignore": [
+      "/docs/dist/**"
+    ]
+  }
+}
