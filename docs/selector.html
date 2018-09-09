@@ -1,0 +1,228 @@
+<html>
+  <head>
+    <title>Symplasm</title>
+    <style>
+      * {
+        font-family: monospace;
+      }
+
+      .page {
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        padding: 0px 20px 0;
+      }
+
+      header h1 {
+        margin: 0;
+        padding-right: 10px;
+      }
+
+      header a {
+        color: #08f;
+        text-decoration: none;
+        padding: 0px 10px;
+      }
+
+      header a:hover {
+        text-decoration: underline;
+      }
+      
+      .description {
+        align-items: center;
+        justify-content: center;
+        padding: 0px 20px;
+      }
+      
+      .converter {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+      }
+      .converter > div {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        align-self: stretch;
+        padding: 0px 20px;
+      }
+
+      .pane {
+        padding: 10px;
+        font-size: 1em;
+        border: none;
+        margin: 0px;
+        outline: none;
+        overflow: auto;
+        background: #f1f1f1;
+        padding: 10px;
+        min-height: 300px;
+      }
+      
+      .pane.exported {
+        min-height: 150px;
+        max-height: 150px;
+      }
+    
+      .pane label {
+        display: block;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 5px;
+      }
+
+      #source {
+        flex: 1;
+        display: flex;
+        align-self: stretch;
+        border: none;
+        background-color: transparent;
+        outline: none;
+        padding: 0px;
+        font-size: inherit;
+        min-height: 300px;
+        max-width: 350px;
+      }
+
+      textarea {
+        flex: 1;
+        display: flex;
+        align-self: stretch;
+        width: 100vw;
+        height: 175px;
+        border: none;
+        background-color: transparent;
+        outline: none;
+        padding: 0px;
+        font-size: inherit;
+        resize: none;
+      }
+
+      #output {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='page'>
+      <header>
+        <h1>Symplasm</h1>
+        <a href='https://github.com/lancetipton/symplasm'>Symplasm on Github</a>
+      </header>
+      <div class='description'>
+        <p>
+          Export JSON in vDom format.
+        </p>
+      </div>
+      <div class='converter'>
+        <div>
+          <label><b>HTML</b></label>
+          <div class='pane pane-source'>
+            <textarea id='source' placeholder='<div>HTML to transform</div>'>
+            
+<input class="class-input" id="super-input" name="input-to-be-replaced" />
+<select class="class-select" id="super-select" name="select-to-be-replaced" /></select>
+
+            </textarea>
+          </div>
+        </div>
+        <div>
+          <label><b>JSON (ast)</b></label>
+          <div class='pane pane-output'>
+            <pre id='output'></pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+<!-- <input class="td-input" />
+<input class="test-input" />
+<button class="td-button" name="button-not-replaced" ></button>
+<button class="test-button" name="button-not-replaced" ></button>
+<div class="td-input " ></div>
+<div class="td-button" ></div>
+<div class="test-input" ></div>
+<div class="test-button" ></div> -->
+
+
+    <script src='dist/symplasm.js'></script>
+    <script>
+      var counter = 0
+      
+      var buttonClick = function(event){
+        console.log('------------------button click------------------');
+        console.log(event);
+      }
+      
+      function $ (selector) {
+        return document.querySelector(selector)
+      }
+      var options = {
+        trim: true,
+        lowerCaseTag: false,
+        
+        attrKeyConvert: {
+          class: 'className',
+          id: function(element, key, value, allNodes, children, options){
+            return 'td-' + key
+          },
+          name: {
+            selector: ['input#super-input', 'select'],
+            value: function(element, key, value, allNodes, children, options){
+              return 'td-' + key
+            }
+          }
+        },
+        
+        attrValueConvert: {
+          id: function(element, key, value, allNodes, children, options){
+            return 'td-' + element.tagName
+          },
+          name: {
+            selector: ['input'],
+            value: function(element, key, value, allNodes, children, options){
+              return 'td-' + element.tagName
+            }
+          }
+        },
+
+        // attrKeyAdd: {
+        //   'onclick': {
+        //     selector: ['button.td-button'],
+        //     value: 'buttonClick(event)'
+        //   },
+        //   'added-key-function': {
+        //     selector: {
+        //       'input.td-input': {
+        //         value: function(element, key, value, allNodes, children, options){
+        //           return 'added-function-value'
+        //         }
+        //       }
+        //     },
+        //   }
+        // }
+        
+        
+      }
+
+      function updateOutput () {
+        var html = $('#source').value || ''
+        var code = symplasm.parse(html, options)
+        $('#output').innerText = JSON.stringify(code, null, 2)
+        var htmlString = symplasm.stringify(code)
+      }
+
+      $('#source').onkeyup = updateOutput
+      updateOutput()
+
+    </script>
+  </body>
+</html>

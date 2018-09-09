@@ -25,9 +25,6 @@ export function formatAttributes (attributes) {
 
 export function toHTML (tree, options) {
   if (typeof tree === 'string') return tree
-console.log('------------------tree------------------');
-console.log(tree);
-
   return tree && tree.map(node => {
     if (typeof node === 'string') return node
     if (node.type === 'comment') return `<!--${node.content}-->`
@@ -38,7 +35,7 @@ console.log(tree);
     const isSelfClosing = arrayIncludes(options.voidTags, tagName.toLowerCase())
     return isSelfClosing
       ? `<${tagName}${formatAttributes(attributes)}>`
-      : `<${tagName}${formatAttributes(attributes)}>${toHTML(children, options)}</${tagName}>`
+      : `<${tagName}${formatAttributes(attributes)}>${toHTML(children, options) || '' }</${tagName}>`
   }).join('')
 }
 
