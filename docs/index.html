@@ -119,14 +119,23 @@
           <label><b>HTML</b></label>
           <div class='pane pane-source'>
 
-            <textarea id='source' placeholder='<div>HTML to transform</div>'>
-
-<input class="class-input" id="super-input" name="input-to-be-replaced" />
+<!-- 
 <select class="class-select" id="super-select" name="select-to-be-replaced" /></select>
 <button class="td-button" td-button="false" ></button>
 <div class="td-div" td-root ></div>
 <input id="td-first-input"  />
+ -->
 
+            <textarea id='source' placeholder='<div>HTML to transform</div>'>
+
+<input class="class-input" id="super-input" name="input-to-be-replaced" />
+<select class="class-select" id="super-select" name="select-to-be-replaced" >
+  <option value="1" >1</option>
+</select>
+<!-- I am comment -->
+<button class="td-button" td-button="false" ></button>
+<div class="td-div" td-root ></div>
+<input id="td-first-input"  />
             </textarea>
           </div>
         </div>
@@ -179,9 +188,16 @@
       var options = {
         trim: true,
         lowerCaseTag: false,
+        comments: false,
         root: {
           0: 'article',
-          1: { class: 'foo' },
+          1: {
+            class: 'foo',
+            style: {
+              backgroundColor: 'green',
+              marginTop: '10px',
+            }
+          },
           2: [{
             0: 'div',
             1: { class: 'added-child' },
@@ -189,6 +205,15 @@
           }],
         },
         tagConvert: {
+          input: {
+            0: 'input',
+            1: {
+              style: {
+                backgroundColor: 'green',
+                marginTop: '10px',
+              }
+            }
+          },
           article: 'section',
           'button.td-button': {
             0: 'div',
@@ -223,6 +248,7 @@
           name: {
             selector: ['input#super-input', 'select'],
             value: function(element, key, value, allNodes, children, options){
+              console.log(element);
               return 'td-' + key
             }
           }

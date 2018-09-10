@@ -1,5 +1,9 @@
 import {arrayIncludes} from './compat'
 
+import {
+  splitKeyValue,
+} from './helpers'
+
 export default function parser (tokens, options) {
   const root = {tagName: null, children: []}
   const state = {tokens, options, cursor: 0, stack: [root]}
@@ -97,11 +101,19 @@ export function parse (state) {
 
     cursor++
     const children = []
+
+    attributes = Array.isArray(attributes) && attributes.length
+      ? attributes.reduce((attrs, attr) => {
+          const parts = splitKeyValue(attr, '=') 
+          attrs[parts[0]] = parts[1]
+          return attrs
+        }, {})
+      : {}
+
     nodes.push({
-      type: 'element',
-      tagName: tagToken.content,
-      attributes,
-      children
+      0: tagToken.content,
+      1: attributes,
+      2: children
     })
 
     const hasChildren = !(attrToken.close || arrayIncludes(options.voidTags, tagName))

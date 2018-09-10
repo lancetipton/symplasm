@@ -72,7 +72,8 @@ var options = {
   attrValueConvert: {},
   attrKeyAdd: {},
   trim: false,
-  lowerCaseTag: true
+  lowerCaseTag: true,
+  comments: true
 };
 
 var selectorCheck = {
@@ -85,7 +86,7 @@ var attrArrEmpty = true;
 
 var convertBlock = function convertBlock(block, nodes, children) {
 
-  block[0] = selectorCheck.tagConvert[block[0]] ? runAction({
+  var data = selectorCheck.tagConvert[block[0]] ? runAction({
     action: selectorCheck.tagConvert[block[0]],
     node: block,
     key: '$$DOM_TAG_NAME',
@@ -93,6 +94,8 @@ var convertBlock = function convertBlock(block, nodes, children) {
     nodes: nodes,
     children: children
   }, 'value') : block[0];
+  if (typeof data === 'string') block[0] = data;
+  if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object') block = data;
 
   block[1] = _typeof(block[1]) === 'object' ? Object.keys(block[1]).reduce(function (attrs, key) {
     var useKey = selectorCheck.attrKeyConvert[key] ? runAction({
@@ -112,7 +115,7 @@ var convertBlock = function convertBlock(block, nodes, children) {
         key: key,
         nodes: nodes,
         children: children
-      }, 'value') : (0, _helpers.unquote)(block[1][key]);
+      }, 'value') : typeof block[1][key] === 'string' ? (0, _helpers.unquote)(block[1][key]) : block[1][key];
     }
 
     return attrs;
@@ -143,7 +146,7 @@ var tagConvert = function tagConvert(args) {
   var block = args.block;
 
 
-  var tagName = node.tagName || node[0];
+  var tagName = node[0];
   if (!tagName) return block;
   block[0] = options.lowerCaseTag ? tagName.toLowerCase() : tagName;
 
@@ -197,18 +200,18 @@ var format = function format(args) {
 };
 
 var formatNode = function formatNode(node, nodes, children) {
-  var block = selectorCheck.tagConvert[node.tagName] ? tagConvert({
-    action: selectorCheck.tagConvert[node.tagName],
+  var block = selectorCheck.tagConvert[node[0]] ? tagConvert({
+    action: selectorCheck.tagConvert[node[0]],
     block: {},
-    value: node.tagName,
+    value: node[0],
     node: node,
     nodes: nodes,
     children: children
-  }) : { 0: node.tagName
+  }) : { 0: node[0]
 
     // Build any of the current attrs
   };var attrs = formatAttributes({
-    attributes: node.attributes,
+    attributes: node[1],
     node: node,
     nodes: nodes,
     children: children
@@ -219,7 +222,7 @@ var formatNode = function formatNode(node, nodes, children) {
   block[1] = Object.assign({}, attrs, block[1]);
 
   var childs = format({
-    childs: node.children,
+    childs: node[2],
     parent: block,
     nodes: nodes,
     children: children
@@ -236,9 +239,8 @@ var formatAttributes = function formatAttributes(args) {
   attributes = attributes || {};
   var attrs = {};
 
-  var isArray = Array.isArray(attributes);
   Object.keys(attributes).map(function (item) {
-    var parts = isArray ? (0, _helpers.splitKeyValue)(attributes[item].trim(), '=') : [item, attributes[item]];
+    var parts = [item, attributes[item]];
 
     var key = selectorCheck.attrKeyConvert[parts[0]] ? runAction({
       action: selectorCheck.attrKeyConvert[parts[0]],
@@ -302,18 +304,18 @@ var runAction = function runAction(args, def) {
     case 'function':
 
       return action({
-        0: node.tagName || node[0],
-        1: node.attributes || node[1],
-        2: children || node[2]
+        0: node[0],
+        1: node[1],
+        2: node[2]
       }, key, value, nodes, children, options) || args[def];
     case 'object':
       var shouldUpdateValue = false;
       // Get the tag type to be checked
-      var tagType = node.tagName || node[0];
+      var tagType = node[0];
       if (!tagType) return args[def];
 
       // Get the node attrs if there are any
-      var nodeAttrs = node.attributes || node[1];
+      var nodeAttrs = node[1];
       var attsIsArr = Array.isArray(nodeAttrs);
 
       // Get the selector to check
@@ -361,9 +363,9 @@ var runAction = function runAction(args, def) {
         // If we should update, set the update based on type
         if (typeof updateVal === 'string' || (typeof updateVal === 'undefined' ? 'undefined' : _typeof(updateVal)) === 'object') return updateVal;else if (typeof updateVal === 'function') {
           return updateVal({
-            0: node.tagName || node[0],
-            1: node.attributes || node[1],
-            2: children || node[2]
+            0: node[0],
+            1: node[1],
+            2: node[2]
           }, key, value, nodes, children, options) || args[def];
         }
       }
@@ -402,7 +404,9 @@ var filterFS = function filterFS(node) {
   var start = '';
   var end = '';
   var text = node.content;
+
   if (node.type === 'comment') {
+    if (!options.comments) return null;
     start = '<!--';
     end = '-->';
   }
@@ -1033,6 +1037,8 @@ exports.parse = parse;
 
 var _compat = require('./compat');
 
+var _helpers = require('./helpers');
+
 function parser(tokens, options) {
   var root = { tagName: null, children: [] };
   var state = { tokens: tokens, options: options, cursor: 0, stack: [root] };
@@ -1134,11 +1140,21 @@ function parse(state) {
 
     cursor++;
     var children = [];
+
+    attributes = Array.isArray(attributes) && attributes.length ? attributes.reduce(function (attrs, attr) {
+      var parts = (0, _helpers.splitKeyValue)(attr, '=');
+      attrs[parts[0]] = parts[1];
+      return attrs;
+    }, {}) : {};
+
     nodes.push({
-      type: 'element',
-      tagName: tagToken.content,
-      attributes: attributes,
-      children: children
+      // type: 'element',
+      // tagName: tagToken.content,
+      // attributes,
+      // children,
+      0: tagToken.content,
+      1: attributes,
+      2: children
     });
 
     var hasChildren = !(attrToken.close || (0, _compat.arrayIncludes)(options.voidTags, tagName));
@@ -1152,7 +1168,7 @@ function parse(state) {
   state.cursor = cursor;
 }
 
-},{"./compat":1}],7:[function(require,module,exports){
+},{"./compat":1,"./helpers":3}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

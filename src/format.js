@@ -15,7 +15,8 @@ let options = {
   attrValueConvert: {},
   attrKeyAdd: {},
   trim: false,
-  lowerCaseTag: true
+  lowerCaseTag: true,
+  comments: true
 }
 
 let selectorCheck = {
@@ -29,7 +30,7 @@ let attrArrEmpty = true
 
 const convertBlock = (block, nodes, children) => {
 
-  block[0] = selectorCheck.tagConvert[block[0]]
+  const data = selectorCheck.tagConvert[block[0]]
     ? runAction({
         action: selectorCheck.tagConvert[block[0]],
         node: block,
@@ -39,7 +40,8 @@ const convertBlock = (block, nodes, children) => {
         children
       }, 'value')
     : block[0]
-  
+  if(typeof data === 'string') block[0] = data
+  if(typeof data === 'object') block = data
 
   block[1] = typeof block[1] === 'object'
     ? Object.keys(block[1]).reduce((attrs, key) => {
@@ -54,7 +56,6 @@ const convertBlock = (block, nodes, children) => {
             }, 'key')
           : key
 
-
         if(useKey && block[1][key]){
           attrs[useKey] = selectorCheck.attrValueConvert[key]
             ? runAction({
@@ -65,7 +66,9 @@ const convertBlock = (block, nodes, children) => {
                 nodes,
                 children
               }, 'value')
-            : unquote(block[1][key])
+            : typeof block[1][key] === 'string'
+              ? unquote(block[1][key])
+              : block[1][key]
         }
 
         return attrs
@@ -92,7 +95,7 @@ const tagConvert = (args) => {
   const { action, node, value, nodes, children } = args
   let { block } = args
 
-  const tagName = node.tagName || node[0]
+  const tagName = node[0]
   if(!tagName) return block
   block[0] = options.lowerCaseTag
     ? tagName.toLowerCase()
@@ -153,20 +156,20 @@ const format = (args) => {
 }
 
 const formatNode = (node, nodes, children) => {
-  const block = selectorCheck.tagConvert[node.tagName]
+  const block = selectorCheck.tagConvert[node[0]]
     ? tagConvert({
-        action: selectorCheck.tagConvert[node.tagName],
+        action: selectorCheck.tagConvert[node[0]],
         block: {},
-        value: node.tagName,
+        value: node[0],
         node,
         nodes,
         children
       })
-    : { 0: node.tagName }
+    : { 0: node[0] }
 
   // Build any of the current attrs
   const attrs = formatAttributes({
-    attributes: node.attributes,
+    attributes: node[1],
     node,
     nodes,
     children
@@ -177,7 +180,7 @@ const formatNode = (node, nodes, children) => {
   block[1] = Object.assign({}, attrs, block[1])
 
   const childs = format({
-    childs: node.children,
+    childs: node[2],
     parent: block,
     nodes,
     children
@@ -191,11 +194,8 @@ const formatAttributes = (args) => {
   attributes = attributes || {}
   const attrs = {}
 
-  const isArray = Array.isArray(attributes)
   Object.keys(attributes).map(item => {
-    const parts = isArray
-      ? splitKeyValue(attributes[item].trim(), '=')
-      : [ item, attributes[item]]
+    const parts = [ item, attributes[item]]
 
     const key = selectorCheck.attrKeyConvert[parts[0]]
       ? runAction({
@@ -258,18 +258,18 @@ const runAction = (args, def) => {
       
     
       return action({
-        0: node.tagName || node[0],
-        1: node.attributes || node[1],
-        2: children || node[2]
+        0: node[0],
+        1: node[1],
+        2: node[2]
       }, key, value, nodes, children, options) || args[def]
     case 'object':
       let shouldUpdateValue = false
       // Get the tag type to be checked
-      const tagType = node.tagName || node[0]
+      const tagType = node[0]
        if(!tagType) return args[def]
       
       // Get the node attrs if there are any
-      const nodeAttrs = node.attributes || node[1]
+      const nodeAttrs = node[1]
       const attsIsArr = Array.isArray(nodeAttrs)
 
       // Get the selector to check
@@ -326,9 +326,9 @@ const runAction = (args, def) => {
         if(typeof updateVal === 'string' || typeof updateVal === 'object') return updateVal
         else if(typeof updateVal === 'function'){
           return updateVal({
-            0: node.tagName || node[0],
-            1: node.attributes || node[1],
-            2: children || node[2]
+            0: node[0],
+            1: node[1],
+            2: node[2]
           }, key, value, nodes, children, options) || args[def]
         }
       }
@@ -364,7 +364,9 @@ const filterFS = (node) => {
   let start = ''
   let end = ''
   let text = node.content
+
   if (node.type === 'comment') {
+    if(!options.comments) return null
     start = '<!--'
     end = '-->'
   }
