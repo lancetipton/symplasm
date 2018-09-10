@@ -1,9 +1,14 @@
+import {
+  addChildren,
+  convertStyle,
+  setupSelectors,
+  splitKeyValue,
+  unquote
+} from './helpers'
+
 let options = {
   root: {
     0: 'div',
-    1: {
-      class: 'root-node',
-    }
   },
   tagConvert: {},
   attrKeyConvert: {},
@@ -21,42 +26,12 @@ let selectorCheck = {
 }
 let attrArrEmpty = true
 
-// ----------- Converters ----------- //
-const convertCase = text => {
-  let converted = ''
-  const text_split = text.split('-')
-  if(!text_split.length) return text
-  converted += text_split.shift()
-  text_split.map(val => {
-    converted += val.charAt(0).toUpperCase() + val.slice(1)
-  })
-  return converted
-}
-
-const convertStyle = styles => {
-  const valObj = {}
-  const val_split = styles.trim().split(';')
-  
-  Array.isArray(val_split) &&
-    val_split[0].trim() !== '' &&
-    val_split.map(item => {
-      if (item.indexOf(':') !== -1) {
-        const item_split = item.split(':')
-        if (Array.isArray(item_split) && item_split.length === 2) {
-          if (item_split[0].trim() !== '' && item_split[1].trim() !== '') {
-            valObj[convertCase(item_split[0].trim())] = item_split[1].trim()
-          }
-        }
-      }
-    })
-
-  return valObj
-}
 
 const convertBlock = (block, nodes, children) => {
-  block[0] = options.tagConvert[block[0]]
+
+  block[0] = selectorCheck.tagConvert[block[0]]
     ? runAction({
-        action: options.tagConvert[block[0]],
+        action: selectorCheck.tagConvert[block[0]],
         node: block,
         key: '$$DOM_TAG_NAME',
         value: block[0],
@@ -64,12 +39,13 @@ const convertBlock = (block, nodes, children) => {
         children
       }, 'value')
     : block[0]
+  
 
   block[1] = typeof block[1] === 'object'
     ? Object.keys(block[1]).reduce((attrs, key) => {
-        let useKey = options.attrKeyConvert[key]
+        let useKey = selectorCheck.attrKeyConvert[key]
           ? runAction({
-              action: options.attrKeyConvert[key],
+              action: selectorCheck.attrKeyConvert[key],
               node: block,
               value: block[1][key],
               key,
@@ -78,10 +54,11 @@ const convertBlock = (block, nodes, children) => {
             }, 'key')
           : key
 
+
         if(useKey && block[1][key]){
-          attrs[useKey] = options.attrValueConvert[key]
+          attrs[useKey] = selectorCheck.attrValueConvert[key]
             ? runAction({
-                action: options.attrValueConvert[key],
+                action: selectorCheck.attrValueConvert[key],
                 node: block,
                 value: block[1][key],
                 key,
@@ -94,7 +71,7 @@ const convertBlock = (block, nodes, children) => {
         return attrs
       }, {})
     : {}
-  
+
   if(block[2] &&  typeof block[2] !== 'string' && block[2].length){
     block[2] = block[2].map(child => {
       return convertBlock(child, nodes, children)
@@ -114,7 +91,7 @@ const buildBlock = (org, added, nodes, children) => {
 const tagConvert = (args) => {
   const { action, node, value, nodes, children } = args
   let { block } = args
-  
+
   const tagName = node.tagName || node[0]
   if(!tagName) return block
   block[0] = options.lowerCaseTag
@@ -139,15 +116,22 @@ const tagConvert = (args) => {
   else if(typeof action === 'object' && !Array.isArray(action) && action[0]){
     return buildBlock(block, action, nodes, children)
   }
-  else block[0] = runAction({
-    key: '$$DOM_TAG_NAME',
-    value: block[0],
-    action,
-    node,
-    nodes,
-    children
-  }, 'value')
-
+  else {
+    const data = runAction({
+      key: '$$DOM_TAG_NAME',
+      value: block[0],
+      action,
+      node,
+      nodes,
+      children
+    }, 'value')
+    if(typeof data === 'string') block[0] = data
+    if(typeof data === 'object'){
+      block = buildBlock(block, data, nodes, children)
+    }
+  }
+  
+  
   return block
 }
 
@@ -169,10 +153,9 @@ const format = (args) => {
 }
 
 const formatNode = (node, nodes, children) => {
-
-  const block = options.tagConvert[node.tagName]
+  const block = selectorCheck.tagConvert[node.tagName]
     ? tagConvert({
-        action: options.tagConvert[node.tagName],
+        action: selectorCheck.tagConvert[node.tagName],
         block: {},
         value: node.tagName,
         node,
@@ -180,14 +163,18 @@ const formatNode = (node, nodes, children) => {
         children
       })
     : { 0: node.tagName }
-  
+
+  // Build any of the current attrs
   const attrs = formatAttributes({
     attributes: node.attributes,
     node,
     nodes,
     children
   })
-  block[1] = Object.assign({}, block[1], attrs)
+
+  // current attr data get merge after the data from the node
+  // This is because the only way the block will have attrs is if it was tagConverted
+  block[1] = Object.assign({}, attrs, block[1])
 
   const childs = format({
     childs: node.children,
@@ -199,7 +186,9 @@ const formatNode = (node, nodes, children) => {
 }
 
 const formatAttributes = (args) => {
-  const { node, attributes, nodes, children } = args
+  const { node, nodes, children } = args
+  let { attributes } = args
+  attributes = attributes || {}
   const attrs = {}
 
   const isArray = Array.isArray(attributes)
@@ -208,15 +197,15 @@ const formatAttributes = (args) => {
       ? splitKeyValue(attributes[item].trim(), '=')
       : [ item, attributes[item]]
 
-    const key = options.attrKeyConvert && options.attrKeyConvert[parts[0]]
+    const key = selectorCheck.attrKeyConvert[parts[0]]
       ? runAction({
-        action: options.attrKeyConvert[parts[0]],
-        key: parts[0],
-        value: parts[1],
-        node,
-        nodes,
-        children
-      }, 'key')
+          action: selectorCheck.attrKeyConvert[parts[0]],
+          key: parts[0],
+          value: parts[1],
+          node,
+          nodes,
+          children
+        }, 'key')
       : parts[0]
   
     const value = typeof parts[1] === 'string'
@@ -228,9 +217,8 @@ const formatAttributes = (args) => {
           children
         })
       : null
-    if(key && value) attrs[key] = value
+    if(key) attrs[key] = value || 'true'
   })
-  
   
   if(attrArrEmpty) return attrs
   
@@ -247,9 +235,9 @@ const formatValue = (args) => {
   const { node, key, value, nodes, children } = args
   return key === 'style' && typeof value === 'string'
     ? convertStyle(unquote(value))
-    : options.attrValueConvert[key]
+    : selectorCheck.attrValueConvert[key]
       ? runAction({
-          action: options.attrValueConvert[key],
+          action: selectorCheck.attrValueConvert[key],
           value: unquote(value),
           node,
           key,
@@ -259,45 +247,96 @@ const formatValue = (args) => {
       : unquote(value)
 }
 
-// ----------- Selector Checks ----------- //
-
 // ----------- Run options methods ----------- //
 const runAction = (args, def) => {
   const { action, node, key, value, nodes, children } = args
-  console.log('------------------do selector check here------------------');
+  
   switch(typeof action){
+    case 'string':
+      return action || args[def]
     case 'function':
-      return action(node, key, value, nodes, children, options) || action
+      
+    
+      return action({
+        0: node.tagName || node[0],
+        1: node.attributes || node[1],
+        2: children || node[2]
+      }, key, value, nodes, children, options) || args[def]
     case 'object':
+      let shouldUpdateValue = false
+      // Get the tag type to be checked
       const tagType = node.tagName || node[0]
-      let updateValue = !action.selector
-      // Run default actions if no selector specified
-      if(typeof action.selector === 'object'){
-        if(Array.isArray(action.selector) && action.selector.indexOf(tagType) !== -1){
-          
-        }
+       if(!tagType) return args[def]
+      
+      // Get the node attrs if there are any
+      const nodeAttrs = node.attributes || node[1]
+      const attsIsArr = Array.isArray(nodeAttrs)
+
+      // Get the selector to check
+      const selector = action[tagType]
+      // if none, return the default
+      if(!selector) return args[def]
+      
+      
+      // Get the update value
+      const updateVal = selector.value || action.value
+
+      // if none, return the default
+      if(!updateVal) return args[def]
+
+      // Check if it's an all selector, if it is, set the value
+      if(selector.all) shouldUpdateValue = true
+      else {
+        // return the default if it's not a select all and no attrs exist
+        if(!nodeAttrs) return args[def]
         
-        Object.keys(action.selector).map(key => {
-          const actionValue = action.selector[key]
-          if(typeof actionValue === 'string'){
-            
+        // Loop the slector and check if any of the elements attrs match
+        Object.keys(selector).map(key => {
+          // If the updateVaule is already set, stop checking
+          if(shouldUpdateValue) return
+          
+          let toCheck = `${key}="${selector[key]}"`
+          if(attsIsArr){
+            shouldUpdateValue = key !== 'data'
+              ? nodeAttrs.indexOf(toCheck) !== -1
+              : nodeAttrs.reduce((isValid, attr) => {
+                  return isValid || ( selector[key].indexOf('=') !== -1
+                    ? selector[key] === attr
+                    : selector[key] === attr.split('=')[0]
+                  )
+                }, false)
           }
-          if(typeof actionValue === 'object'){
-            
+          else {
+            let useKey = key
+            if(key === 'data') useKey = selector[key].split('=')[0]
+            // if nodeAttrs is an object, and the key does not exsits, then return
+            if(!nodeAttrs[useKey]) return
+            shouldUpdateValue = selector[key].indexOf('=') !== -1
+              // If select as = we are looking for more specific, so
+              // build key from nodeAttrs and test it
+              ? `${useKey}="${nodeAttrs[useKey]}"` === selector[key]
+              // Otherwise return true, because we know the nodeAttrs has the key
+              : true
           }
         })
       }
-      if(updateValue){
-        if(!tagType || !action.value) return value
-        if(typeof action.value === 'string') return action.value
-        if(typeof action.value === 'function')
-          return action.value(node, key, value, nodes, children, options)
+      
+      if(shouldUpdateValue){
+        // If we should update, set the update based on type
+        if(typeof updateVal === 'string' || typeof updateVal === 'object') return updateVal
+        else if(typeof updateVal === 'function'){
+          return updateVal({
+            0: node.tagName || node[0],
+            1: node.attributes || node[1],
+            2: children || node[2]
+          }, key, value, nodes, children, options) || args[def]
+        }
       }
-      
-      
+      // If we should not update the elment, return the default
       return args[def]
+
     default:
-      return action
+      return action || args[def]
   }
 }
 
@@ -305,89 +344,21 @@ const runAction = (args, def) => {
 const addAttribute = (args) => {
   const { node, attrs, nodes, children } = args
   
-  Object.keys(options.attrKeyAdd).map(key => {
-    const action = options.attrKeyAdd[key]
-    let value
-    if(typeof action === 'object'){
-      if(!action.value) return
-      const checkArgs = Object.assign({}, args, { action, key })
-      console.log('------------------do selector check here------------------');
-      if(checkSelector(checkArgs)){
-        value = typeof action.value === 'function'
-          ? action.value(
-              node,
-              key,
-              action.value,
-              nodes,
-              children,
-              options,
-            )
-          : action.value
-      }
-    }
-    else {
-      value = runAction({
-        action: options.attrKeyAdd[key],
-        value: action.value,
-        node,
-        key,
-        nodes,
-        children
-      })
-    }
+  Object.keys(selectorCheck.attrKeyAdd).map(key => {
+    const value = runAction({
+      action: selectorCheck.attrKeyAdd[key],
+      key,
+      node,
+      nodes,
+      children
+    })
+
     if(value) attrs[key] = value
   })
 
   return attrs
 }
 
-// ----------- Selector Checks ----------- //
-
-
-const checkSelector = (args) => {
-  const { action, node, key, value, nodes, children } = args
-  const tagType = node.tagName || node[0]
-  
-  if(action.selector){
-    
-  }
-  // runAction
-  // action, node, key, value, nodes, children
-  // action.selector && action.selector.indexOf(tagType) === -1
-  
-  // addAttribute
-  // node, attrs, nodes, children
-  // !action.selector || action.selector.indexOf(node.tagName) !== -1
-}
-
-const addChildren = (block, childs) => {
-  const addChilds = childs.length === 1 && typeof childs[0] === 'string'
-    ? childs[0]
-    : childs.length && childs || null
-
-  if(addChilds) {
-    if(!block[2]) block[2] = addChilds
-    else if(Array.isArray(block[2])) block[2] = block[2].concat(addChilds)
-    else block[2] = [block[2]].concat(addChilds)
-  }
-  return block
-}
-
-const splitKeyValue = (str, sep) => {
-  const idx = str.indexOf(sep)
-  if (idx === -1) return [str]
-  return [str.slice(0, idx), str.slice(idx + sep.length)]
-}
-
-const unquote = str => {
-  const car = str.charAt(0)
-  const end = str.length - 1
-  const isQuoteStart = car === '"' || car === "'"
-  if (isQuoteStart && car === str.charAt(end)) {
-    return str.slice(1, end)
-  }
-  return str
-}
 
 const filterFS = (node) => {
   let start = ''
@@ -407,70 +378,15 @@ const filterFS = (node) => {
     : null
 }
 
-const setupSelectors = () => {
-  const selectorArr = ['tagConvert', 'attrKeyConvert', 'attrValueConvert', 'attrKeyAdd']
-  const selectTypes = [[ 'class', '.'], [ 'id', '#'], [ 'data', '[']]
-
-  Object.keys(options).map(key => {
-    if(selectorArr.indexOf(key) === -1) return
-    
-    Object.keys(options[key]).map(attr => {
-      // Get the attribute to be checked - i.e. class / id / name
-      const attribute = options[key][attr]
-      // No selector, just return
-      if(!attribute.selector) return
-      selectorCheck[key][attr] = selectorCheck[key][attr] || {}
-      // chache selector type
-      const isArr = Array.isArray(attribute.selector)
-      // check that is has a value to return
-      if(isArr){
-        if(!options[key][attr].value) return  
-        selectorCheck[key][attr].value = options[key][attr].value
-      }
-      else if(!attribute.selector[select].value) return
-      
-      Object.keys(attribute.selector).map(select => {
-        // Selector tags - i.e. input.class / button#primary / select[td-select]
-        const tags = isArr && attribute.selector[select] || select
-        // split all tags if more then 1
-        const allTags = tags.split(',')
-        // loop tags and split on selector type - i.e. class / id / name
-        allTags.map(tag => {
-          const props = {}
-          let el
-          const hasSelectors = []
-          // Loop selector types and add to select checker
-          selectTypes.map(type => {
-            if(tag.indexOf(type[1]) !== -1){
-              const split = tag.split(type[1])
-              props[type[0]] = split[1].replace(']', '')
-              el = split[0]
-              hasSelectors.push(true)
-            }
-          })
-          if(hasSelectors.indexOf(true) !== -1){
-            selectorCheck[key][attr][el] = props
-            if(!isArr) selectorCheck[key][attr][el].value = attribute.selector[select].value
-          }
-          else {
-            selectorCheck[key][attr][tag] = '*'
-            if(!isArr) selectorCheck[key][attr][tag].value = attribute.selector[select].value
-          }
-        })
-      })
-
-    })
-  })
-}
-
 export const formatFS = (nodes, _options) => {
   let rootFS = Object.assign({}, options.root, _options.root)
   Object.assign(options, _options)
-  setupSelectors(options)
+  selectorCheck = setupSelectors(selectorCheck, options)
   attrArrEmpty = Object.keys(options.attrKeyAdd).length === 0
-  if(options.tagConvert[rootFS[0]]){
+  
+  if(selectorCheck.tagConvert[rootFS[0]]){
     rootFS = tagConvert({
-      action: options.tagConvert[rootFS[0]],
+      action: selectorCheck.tagConvert[rootFS[0]],
       block: rootFS,
       value: rootFS[0],
       node: rootFS,
@@ -484,6 +400,13 @@ export const formatFS = (nodes, _options) => {
     children: nodes,
     nodes
   })
+
+  rootFS[2] = Array.isArray(rootFS[2])
+  ? rootFS[2].map(child => {
+      return convertBlock(child, nodes, nodes)
+    })
+  : []
+
   return addChildren(rootFS, format({
     childs: nodes,
     parent: rootFS,
