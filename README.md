@@ -144,6 +144,7 @@ cosnt htmlString = symplasm.stringify( jsObject )
           'button,div': 'updates-both-elements'
         },
         name: {
+          // all buttons and sections will have their name property change to name-key-converted
           selector: ['button', 'section'],
           value: 'name-key-converted'
         }
