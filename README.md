@@ -47,9 +47,10 @@
   * Options - JS object ( See options below )
 
 ```js
-import symplasm from 'symplasm'
 
-cosnt jsObject = symplasm.parse( htmlString, options )
+const symplasm = require('symplasm')
+
+const jsObject = symplasm.parse(html, options)
 
 ```
 
@@ -59,7 +60,7 @@ cosnt jsObject = symplasm.parse( htmlString, options )
 
 ```js
 
-cosnt htmlString = symplasm.stringify( jsObject )
+const htmlString = symplasm.stringify( jsObject )
 
 ```
 
