@@ -2,6 +2,7 @@ import {arrayIncludes} from './compat'
 
 import {
   splitKeyValue,
+  unquote,
 } from './helpers'
 
 export default function parser (tokens, options) {
@@ -105,7 +106,7 @@ export function parse (state) {
     attributes = Array.isArray(attributes) && attributes.length
       ? attributes.reduce((attrs, attr) => {
           const parts = splitKeyValue(attr, '=') 
-          attrs[parts[0]] = parts[1]
+          attrs[parts[0]] = parts[1] && unquote(parts[1]) || ''
           return attrs
         }, {})
       : {}

@@ -122,9 +122,6 @@ const htmlString = symplasm.stringify( jsObject )
     * Can be `string` / `function` / `object`
       * `Functions` must retrun a `string`
       * If it's an object
-        * Object can have a selector array of items to update, and a value
-          * Value can be a `string` / `function` - **must retrun a string**
-        * **OR**
         * Sub items can be defined to allow only updating the specified elements
         * Must be a Key / value pair to be converted during the parse
         * Key must be an `tag type / element selector as a string`
@@ -143,11 +140,6 @@ const htmlString = symplasm.stringify( jsObject )
           'select.no-id': 'no-select-id'
           // al buttons and divs will have their id converted to updates-both-elements
           'button,div': 'updates-both-elements'
-        },
-        name: {
-          // all buttons and sections will have their name property change to name-key-converted
-          selector: ['button', 'section'],
-          value: 'name-key-converted'
         }
       }
     ```
@@ -184,8 +176,7 @@ const htmlString = symplasm.stringify( jsObject )
       {
         'onclick': {
           // all buttons with the td-button attribute will have an onclick attribute added
-          selector: ['button[td-button]'],
-          value: 'buttonClick(event)'
+          'button[td-button]': 'buttonClick(event)'
         }
         'id': {
           // all inputs with the class add-id will get an id added

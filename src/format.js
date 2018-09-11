@@ -2,7 +2,6 @@ import {
   addChildren,
   convertStyle,
   setupSelectors,
-  splitKeyValue,
   unquote
 } from './helpers'
 
@@ -26,15 +25,14 @@ let selectorCheck = {
   attrKeyAdd: {},
 }
 let attrArrEmpty = true
-
+const domTagAction = '$$DOM_TAG_NAME'
 
 const convertBlock = (block, nodes, children) => {
-
   const data = selectorCheck.tagConvert[block[0]]
     ? runAction({
         action: selectorCheck.tagConvert[block[0]],
         node: block,
-        key: '$$DOM_TAG_NAME',
+        key: domTagAction,
         value: block[0],
         nodes,
         children
@@ -103,7 +101,7 @@ const tagConvert = (args) => {
 
   if(typeof action === 'function'){
     let data = runAction({
-      key: '$$DOM_TAG_NAME',
+      key: domTagAction,
       value: block[0],
       action,
       node,
@@ -114,14 +112,14 @@ const tagConvert = (args) => {
     if(typeof data === 'string') data = { 0: data }
     
     if(typeof data === 'object')
-      return buildBlock(block, data, nodes, children)
+      block = buildBlock(block, data, nodes, children)
   }
   else if(typeof action === 'object' && !Array.isArray(action) && action[0]){
-    return buildBlock(block, action, nodes, children)
+    block = buildBlock(block, action, nodes, children)
   }
   else {
     const data = runAction({
-      key: '$$DOM_TAG_NAME',
+      key: domTagAction,
       value: block[0],
       action,
       node,
@@ -133,8 +131,6 @@ const tagConvert = (args) => {
       block = buildBlock(block, data, nodes, children)
     }
   }
-  
-  
   return block
 }
 
@@ -207,8 +203,8 @@ const formatAttributes = (args) => {
           children
         }, 'key')
       : parts[0]
-  
-    const value = typeof parts[1] === 'string'
+
+    const value = typeof parts[1] === 'string' || typeof parts[1] === 'object'
       ? formatValue({
           key: parts[0],
           value: parts[1],
@@ -217,7 +213,15 @@ const formatAttributes = (args) => {
           children
         })
       : null
-    if(key) attrs[key] = value || 'true'
+
+    if(key){
+      if(key === 'class' && value === '') attrs[key] = ''
+      if(key === 'id' && !value) return
+      attrs[key] = value || value === false
+        ? value
+        : true
+    }
+
   })
   
   if(attrArrEmpty) return attrs
@@ -233,7 +237,7 @@ const formatAttributes = (args) => {
 
 const formatValue = (args) => {
   const { node, key, value, nodes, children } = args
-  return key === 'style' && typeof value === 'string'
+  const updatedVal = key === 'style' && typeof value === 'string'
     ? convertStyle(unquote(value))
     : selectorCheck.attrValueConvert[key]
       ? runAction({
@@ -244,7 +248,11 @@ const formatValue = (args) => {
           nodes,
           children
         }, 'value')
-      : unquote(value)
+      : typeof value === 'string' && unquote(value) || value
+
+  if(updatedVal === 'true') return true
+  if(updatedVal === 'false') return false
+  return updatedVal
 }
 
 // ----------- Run options methods ----------- //
@@ -255,73 +263,57 @@ const runAction = (args, def) => {
     case 'string':
       return action || args[def]
     case 'function':
-      
-    
       return action({
         0: node[0],
         1: node[1],
         2: node[2]
       }, key, value, nodes, children, options) || args[def]
+      
     case 'object':
-      let shouldUpdateValue = false
+      let updateVal
       // Get the tag type to be checked
       const tagType = node[0]
        if(!tagType) return args[def]
       
       // Get the node attrs if there are any
       const nodeAttrs = node[1]
-      const attsIsArr = Array.isArray(nodeAttrs)
-
+      if(!nodeAttrs) return args[def]
+      
       // Get the selector to check
       const selector = action[tagType]
       // if none, return the default
       if(!selector) return args[def]
-      
-      
-      // Get the update value
-      const updateVal = selector.value || action.value
-
-      // if none, return the default
-      if(!updateVal) return args[def]
-
       // Check if it's an all selector, if it is, set the value
-      if(selector.all) shouldUpdateValue = true
-      else {
+      updateVal = selector.all || null
+      const selectKeys = Object.keys(selector)
+
+      if(
+        // Check if there are more keys then just the all key
+        selector.all && selectKeys.length > 1 ||
+        // Check if there is no all key, but there are other keys
+        !selector.all  && selectKeys.length >= 1
+      ){
         // return the default if it's not a select all and no attrs exist
         if(!nodeAttrs) return args[def]
-        
         // Loop the slector and check if any of the elements attrs match
+        let setSelector
+        
         Object.keys(selector).map(key => {
-          // If the updateVaule is already set, stop checking
-          if(shouldUpdateValue) return
+          // If the updateVaule is already set or the key does not exist, stop checking
+          if(setSelector || (!nodeAttrs[key] && nodeAttrs[key] !== '')) return
           
-          let toCheck = `${key}="${selector[key]}"`
-          if(attsIsArr){
-            shouldUpdateValue = key !== 'data'
-              ? nodeAttrs.indexOf(toCheck) !== -1
-              : nodeAttrs.reduce((isValid, attr) => {
-                  return isValid || ( selector[key].indexOf('=') !== -1
-                    ? selector[key] === attr
-                    : selector[key] === attr.split('=')[0]
-                  )
-                }, false)
+          if(nodeAttrs[key] === "true" && !selector[key][nodeAttrs[key]] && selector[key]['']){
+            updateVal = selector[key]['']
+            setSelector = true
           }
-          else {
-            let useKey = key
-            if(key === 'data') useKey = selector[key].split('=')[0]
-            // if nodeAttrs is an object, and the key does not exsits, then return
-            if(!nodeAttrs[useKey]) return
-            shouldUpdateValue = selector[key].indexOf('=') !== -1
-              // If select as = we are looking for more specific, so
-              // build key from nodeAttrs and test it
-              ? `${useKey}="${nodeAttrs[useKey]}"` === selector[key]
-              // Otherwise return true, because we know the nodeAttrs has the key
-              : true
+          else if(selector[key][nodeAttrs[key]]){
+            updateVal = selector[key][nodeAttrs[key]]
+            setSelector = true
           }
         })
       }
-      
-      if(shouldUpdateValue){
+
+      if(updateVal){
         // If we should update, set the update based on type
         if(typeof updateVal === 'string' || typeof updateVal === 'object') return updateVal
         else if(typeof updateVal === 'function'){

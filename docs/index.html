@@ -124,18 +124,20 @@
 <button class="td-button" td-button="false" ></button>
 <div class="td-div" td-root ></div>
 <input id="td-first-input"  />
- -->
-
-            <textarea id='source' placeholder='<div>HTML to transform</div>'>
-
-<input class="class-input" id="super-input" name="input-to-be-replaced" />
 <select class="class-select" id="super-select" name="select-to-be-replaced" >
   <option value="1" >1</option>
 </select>
-<!-- I am comment -->
 <button class="td-button" td-button="false" ></button>
 <div class="td-div" td-root ></div>
-<input id="td-first-input"  />
+<input class="class-input" id="super-input" td-update-item name="input-to-be-replaced" />
+<input class="class-input" id="super-input" td-update-item name="input-to-be-replaced" />
+<select class="class-select" id="to-change-select-id" name="select-name" ></select>
+<select td-name="select-name" ></select>
+ -->
+<!-- I am comment -->
+
+            <textarea id='source' placeholder='<div>HTML to transform</div>'>
+<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" />
             </textarea>
           </div>
         </div>
@@ -194,8 +196,8 @@
           1: {
             class: 'foo',
             style: {
-              backgroundColor: 'green',
-              marginTop: '10px',
+              backgroundColor: 'red',
+              marginTop: '5px',
             }
           },
           2: [{
@@ -228,11 +230,19 @@
               }
             ]
           },
-          'input#super-input': function(element, key, value, allNodes, children, options){
+          'input#td-first-input': function(element, key, value, allNodes, children, options){
             return {
-              0: 'TDInput',
+              0: 'FSInput',
               1: {
-                class: 'td-super-input'
+                class: 'td-fd-inpu-input'
+              }
+            }
+          },
+          'select[td-name="select-name"]': function(element, key, value, allNodes, children, options){
+            return {
+              0: 'TDSelect',
+              1: {
+                class: 'td-changed'
               }
             }
           }
@@ -240,40 +250,38 @@
         attrKeyConvert: {
           class: 'className',
           id: {
-            input: function(element, key, value, allNodes, children, options){
-              return 'td-input'
+            'input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
             },
-            select: 'td-select'
+            'input#super-input': 'td-changed',
           },
           name: {
-            selector: ['input#super-input', 'select'],
-            value: function(element, key, value, allNodes, children, options){
-              return 'td-' + key
+            'input#super-input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
             }
           }
         },
         attrValueConvert: {
           class: {
             'button[td-button],div[td-root]': function(element, key, value, allNodes, children, options){
-              return 'td-replaced-' + element[0]
+              return 'td-changed'
             },
           },
           name: {
-            input: function(element, key, value, allNodes, children, options){
-              return 'td-' + element[0]
+            'input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
             },
-            'select.class-select': 'td-select-name'
+            'select.class-select': 'td-direct-changed'
           }
         },
         attrKeyAdd: {
-          'onclick': {
-            selector: ['button[td-button]'],
-            value: 'buttonClick(event)'
-          },
           'added-key-function': {
-            'input.class-input': function(element, key, value, allNodes, children, options){
-              return 'added-function-value'
-            }
+            'select[td-name="select-name"]': function(element, key, value, allNodes, children, options){
+              return 'select-value'
+            },
+            'input[td-update-item]': function(element, key, value, allNodes, children, options){
+              return 'only-input-value'
+            },
           }
         }
       }

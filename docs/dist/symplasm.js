@@ -83,13 +83,13 @@ var selectorCheck = {
   attrKeyAdd: {}
 };
 var attrArrEmpty = true;
+var domTagAction = '$$DOM_TAG_NAME';
 
 var convertBlock = function convertBlock(block, nodes, children) {
-
   var data = selectorCheck.tagConvert[block[0]] ? runAction({
     action: selectorCheck.tagConvert[block[0]],
     node: block,
-    key: '$$DOM_TAG_NAME',
+    key: domTagAction,
     value: block[0],
     nodes: nodes,
     children: children
@@ -152,7 +152,7 @@ var tagConvert = function tagConvert(args) {
 
   if (typeof action === 'function') {
     var data = runAction({
-      key: '$$DOM_TAG_NAME',
+      key: domTagAction,
       value: block[0],
       action: action,
       node: node,
@@ -162,12 +162,12 @@ var tagConvert = function tagConvert(args) {
     if (!data) return block;
     if (typeof data === 'string') data = { 0: data };
 
-    if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object') return buildBlock(block, data, nodes, children);
+    if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object') block = buildBlock(block, data, nodes, children);
   } else if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && !Array.isArray(action) && action[0]) {
-    return buildBlock(block, action, nodes, children);
+    block = buildBlock(block, action, nodes, children);
   } else {
     var _data = runAction({
-      key: '$$DOM_TAG_NAME',
+      key: domTagAction,
       value: block[0],
       action: action,
       node: node,
@@ -179,7 +179,6 @@ var tagConvert = function tagConvert(args) {
       block = buildBlock(block, _data, nodes, children);
     }
   }
-
   return block;
 };
 
@@ -251,14 +250,19 @@ var formatAttributes = function formatAttributes(args) {
       children: children
     }, 'key') : parts[0];
 
-    var value = typeof parts[1] === 'string' ? formatValue({
+    var value = typeof parts[1] === 'string' || _typeof(parts[1]) === 'object' ? formatValue({
       key: parts[0],
       value: parts[1],
       node: node,
       nodes: nodes,
       children: children
     }) : null;
-    if (key) attrs[key] = value || 'true';
+
+    if (key) {
+      if (key === 'class' && value === '') attrs[key] = '';
+      if (key === 'id' && !value) return;
+      attrs[key] = value || value === false ? value : true;
+    }
   });
 
   if (attrArrEmpty) return attrs;
@@ -278,14 +282,18 @@ var formatValue = function formatValue(args) {
       nodes = args.nodes,
       children = args.children;
 
-  return key === 'style' && typeof value === 'string' ? (0, _helpers.convertStyle)((0, _helpers.unquote)(value)) : selectorCheck.attrValueConvert[key] ? runAction({
+  var updatedVal = key === 'style' && typeof value === 'string' ? (0, _helpers.convertStyle)((0, _helpers.unquote)(value)) : selectorCheck.attrValueConvert[key] ? runAction({
     action: selectorCheck.attrValueConvert[key],
     value: (0, _helpers.unquote)(value),
     node: node,
     key: key,
     nodes: nodes,
     children: children
-  }, 'value') : (0, _helpers.unquote)(value);
+  }, 'value') : typeof value === 'string' && (0, _helpers.unquote)(value) || value;
+
+  if (updatedVal === 'true') return true;
+  if (updatedVal === 'false') return false;
+  return updatedVal;
 };
 
 // ----------- Run options methods ----------- //
@@ -302,64 +310,55 @@ var runAction = function runAction(args, def) {
     case 'string':
       return action || args[def];
     case 'function':
-
       return action({
         0: node[0],
         1: node[1],
         2: node[2]
       }, key, value, nodes, children, options) || args[def];
+
     case 'object':
-      var shouldUpdateValue = false;
+      var updateVal = void 0;
       // Get the tag type to be checked
       var tagType = node[0];
       if (!tagType) return args[def];
 
       // Get the node attrs if there are any
       var nodeAttrs = node[1];
-      var attsIsArr = Array.isArray(nodeAttrs);
+      if (!nodeAttrs) return args[def];
 
       // Get the selector to check
       var selector = action[tagType];
       // if none, return the default
       if (!selector) return args[def];
-
-      // Get the update value
-      var updateVal = selector.value || action.value;
-
-      // if none, return the default
-      if (!updateVal) return args[def];
-
       // Check if it's an all selector, if it is, set the value
-      if (selector.all) shouldUpdateValue = true;else {
+      updateVal = selector.all || null;
+      var selectKeys = Object.keys(selector);
+
+      if (
+      // Check if there are more keys then just the all key
+      selector.all && selectKeys.length > 1 ||
+      // Check if there is no all key, but there are other keys
+      !selector.all && selectKeys.length >= 1) {
         // return the default if it's not a select all and no attrs exist
         if (!nodeAttrs) return args[def];
-
         // Loop the slector and check if any of the elements attrs match
-        Object.keys(selector).map(function (key) {
-          // If the updateVaule is already set, stop checking
-          if (shouldUpdateValue) return;
+        var setSelector = void 0;
 
-          var toCheck = key + '="' + selector[key] + '"';
-          if (attsIsArr) {
-            shouldUpdateValue = key !== 'data' ? nodeAttrs.indexOf(toCheck) !== -1 : nodeAttrs.reduce(function (isValid, attr) {
-              return isValid || (selector[key].indexOf('=') !== -1 ? selector[key] === attr : selector[key] === attr.split('=')[0]);
-            }, false);
-          } else {
-            var useKey = key;
-            if (key === 'data') useKey = selector[key].split('=')[0];
-            // if nodeAttrs is an object, and the key does not exsits, then return
-            if (!nodeAttrs[useKey]) return;
-            shouldUpdateValue = selector[key].indexOf('=') !== -1
-            // If select as = we are looking for more specific, so
-            // build key from nodeAttrs and test it
-            ? useKey + '="' + nodeAttrs[useKey] + '"' === selector[key]
-            // Otherwise return true, because we know the nodeAttrs has the key
-            : true;
+        Object.keys(selector).map(function (key) {
+          // If the updateVaule is already set or the key does not exist, stop checking
+          if (setSelector || !nodeAttrs[key] && nodeAttrs[key] !== '') return;
+
+          if (nodeAttrs[key] === "true" && !selector[key][nodeAttrs[key]] && selector[key]['']) {
+            updateVal = selector[key][''];
+            setSelector = true;
+          } else if (selector[key][nodeAttrs[key]]) {
+            updateVal = selector[key][nodeAttrs[key]];
+            setSelector = true;
           }
         });
       }
 
-      if (shouldUpdateValue) {
+      if (updateVal) {
         // If we should update, set the update based on type
         if (typeof updateVal === 'string' || (typeof updateVal === 'undefined' ? 'undefined' : _typeof(updateVal)) === 'object') return updateVal;else if (typeof updateVal === 'function') {
           return updateVal({
@@ -455,6 +454,9 @@ var formatFS = exports.formatFS = function formatFS(nodes, _options) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var selectTypes = [['class', '.'], ['id', '#'], ['data', '[']];
 
 var addChildren = function addChildren(block, childs) {
@@ -501,6 +503,7 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
     // Only check keys from the selector Array
     if (selectorArr.indexOf(key) === -1) return;
 
+    var props = {};
     Object.keys(options[key]).map(function (attr) {
       // Get the attribute to be checked - i.e. class / id / name
       var attribute = options[key][attr];
@@ -551,9 +554,10 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
         // split all tags if more then 1
         var allTags = tags.split(',');
         // loop tags and split on selector type - i.e. class / id / name
-        allTags.map(function (tag) {
-          var props = {};
+        allTags.map(function (_tag) {
+          var tag = clean(_tag);
           var el = void 0;
+
           var hasSelectors = [];
           // Loop selector types and add to select checker
           // This checks for a class / id / attribute on the select item
@@ -561,8 +565,16 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
             // If it has the passed in type in the string convert it, and add the the props
             if (tag.indexOf(type[1]) !== -1) {
               var split = tag.split(type[1]);
-              props[type[0]] = split[1].replace(']', '');
-              el = split[0];
+              if (type[0] === 'data') {
+                var dataSplit = split[1].split('=');
+                var _key = clean(dataSplit[0].replace(']', ''));
+                var dataKey = dataSplit[1] && clean(dataSplit[1].replace(']', '')) || '';
+                props[_key] = Object.assign({}, props[_key], _defineProperty({}, dataKey, elementSelectors[select]));
+              } else {
+                props[type[0]] = Object.assign({}, props[type[0]], _defineProperty({}, clean(split[1]), elementSelectors[select]));
+              }
+
+              el = clean(split[0]);
               if (el.indexOf('.') !== -1 || el.indexOf('#') !== -1 || el.indexOf('[') !== -1) {
                 console.warn('Error: "' + el + '" is not formatted correctly. It contains one of ". # ["');
               }
@@ -570,43 +582,30 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
               hasSelectors.push(true);
             }
           });
+
           // Check if a select type was found on the selector
           // This will be an array of true if it had a select type on it
           // If no class / id / attribute was found on the selector, it will be an empty array
+          // ------------------ ELEMENT WITH A SELECTOR ------------------ //
           if (hasSelectors.indexOf(true) !== -1) {
-            if (key !== 'tagConvert') {
-              // Add the tags and props to make converstion
-              selectorCheck[key][attr][el] = props;
-              // If it's not an array, add the value to the elment props object
-              if (!isArr) selectorCheck[key][attr][el].value = elementSelectors[select];
-              return;
-            }
+            var loc = key !== 'tagConvert' ? attr : el;
             selectorCheck[key] = selectorCheck[key] || {};
-            selectorCheck[key][el] = selectorCheck[key][el] || {};
-            selectorCheck[key][el][el] = Object.assign({}, props);
-            selectorCheck[key][el][el].value = elementSelectors[select];
-          } else {
-            if (key !== 'tagConvert') {
-
-              // Add the tags and props to make converstion
-              // Setting all true because the selector did not have an class / id / or attr tied to it
-              selectorCheck[key][attr][tag] = { all: true
-                // If it's not an array, add the value to the elment props object
-              };if (!isArr) selectorCheck[key][attr][tag].value = elementSelectors[select];
-              return;
-            }
-            selectorCheck[key] = selectorCheck[key] || {};
-            selectorCheck[key][tag] = selectorCheck[key][tag] || {};
-            selectorCheck[key][tag][tag] = {
-              all: true,
-              value: elementSelectors[select]
-            };
+            selectorCheck[key][loc] = selectorCheck[key][loc] || {};
+            selectorCheck[key][loc][el] = Object.assign({}, selectorCheck[key][loc][el], props);
           }
+          // ------------------ ALL OF ELEMENT TYPE ------------------ //
+          else {
+              var _loc = key !== 'tagConvert' ? attr : tag;
+
+              selectorCheck[key] = selectorCheck[key] || {};
+              selectorCheck[key][_loc] = selectorCheck[key][_loc] || {};
+              selectorCheck[key][_loc][tag] = selectorCheck[key][_loc][tag] || {};
+              selectorCheck[key][_loc][tag].all = elementSelectors[select];
+            }
         });
       });
     });
   });
-
   return selectorCheck;
 };
 
@@ -614,6 +613,10 @@ var splitKeyValue = function splitKeyValue(str, sep) {
   var idx = str.indexOf(sep);
   if (idx === -1) return [str];
   return [str.slice(0, idx), str.slice(idx + sep.length)];
+};
+
+var clean = function clean(str) {
+  return str && unquote(str.trim()).trim() || '';
 };
 
 var unquote = function unquote(str) {
@@ -1143,15 +1146,11 @@ function parse(state) {
 
     attributes = Array.isArray(attributes) && attributes.length ? attributes.reduce(function (attrs, attr) {
       var parts = (0, _helpers.splitKeyValue)(attr, '=');
-      attrs[parts[0]] = parts[1];
+      attrs[parts[0]] = parts[1] && (0, _helpers.unquote)(parts[1]) || '';
       return attrs;
     }, {}) : {};
 
     nodes.push({
-      // type: 'element',
-      // tagName: tagToken.content,
-      // attributes,
-      // children,
       0: tagToken.content,
       1: attributes,
       2: children
