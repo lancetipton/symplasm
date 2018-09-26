@@ -61,7 +61,13 @@ exports.formatFS = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+var _prop_map = require('./prop_map');
+
+var _prop_map2 = _interopRequireDefault(_prop_map);
+
 var _helpers = require('./helpers');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var options = {
   root: {
@@ -71,6 +77,7 @@ var options = {
   attrKeyConvert: {},
   attrValueConvert: {},
   attrKeyAdd: {},
+  attrCamelCase: false,
   trim: false,
   lowerCaseTag: true,
   comments: true
@@ -106,6 +113,8 @@ var convertBlock = function convertBlock(block, nodes, children) {
       nodes: nodes,
       children: children
     }, 'key') : key;
+
+    useKey = options.attrCamelCase && _prop_map2.default[useKey] || useKey;
 
     if (useKey && block[1][key]) {
       attrs[useKey] = selectorCheck.attrValueConvert[key] ? runAction({
@@ -241,6 +250,8 @@ var formatAttributes = function formatAttributes(args) {
   Object.keys(attributes).map(function (item) {
     var parts = [item, attributes[item]];
 
+    if (selectorCheck.attrKeyConvert[parts[0]] === null) return;
+
     var key = selectorCheck.attrKeyConvert[parts[0]] ? runAction({
       action: selectorCheck.attrKeyConvert[parts[0]],
       key: parts[0],
@@ -249,6 +260,8 @@ var formatAttributes = function formatAttributes(args) {
       nodes: nodes,
       children: children
     }, 'key') : parts[0];
+
+    key = options.attrCamelCase && _prop_map2.default[key] || key;
 
     var value = typeof parts[1] === 'string' || _typeof(parts[1]) === 'object' ? formatValue({
       key: parts[0],
@@ -259,7 +272,7 @@ var formatAttributes = function formatAttributes(args) {
     }) : null;
 
     if (key) {
-      if (key === 'class' && value === '') attrs[key] = '';
+      if ((key === 'className' || key === 'class') && value === '') attrs[key] = '';
       if (key === 'id' && !value) return;
       attrs[key] = value || value === false ? value : true;
     }
@@ -448,7 +461,7 @@ var formatFS = exports.formatFS = function formatFS(nodes, _options) {
   }));
 };
 
-},{"./helpers":3}],3:[function(require,module,exports){
+},{"./helpers":3,"./prop_map":7}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -509,7 +522,7 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
       var attribute = options[key][attr];
 
       // Get the element selectors,
-      var elementSelectors = attribute.selector;
+      var elementSelectors = attribute && attribute.selector;
 
       if (key !== 'tagConvert') {
         // If it's just a string set it, and return
@@ -522,14 +535,17 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
 
         // If there's no selectors, loop the attribute and add the keys 
         // to the elementSelector
-        if (!elementSelectors && Object.keys(attribute).length) {
+        if (attribute && !elementSelectors && Object.keys(attribute).length) {
           elementSelectors = {};
           Object.keys(attribute).map(function (key) {
             elementSelectors[key] = attribute[key];
           });
         }
 
-        if (!elementSelectors) return;
+        if (!elementSelectors) {
+          if (attribute === null) selectorCheck[key][attr] = null;
+          return;
+        }
         // Set the default for the selectorCheck items
         selectorCheck[key][attr] = selectorCheck[key][attr] || {};
       } else {
@@ -606,6 +622,7 @@ var setupSelectors = function setupSelectors(selectorCheck, options) {
       });
     });
   });
+
   return selectorCheck;
 };
 
@@ -678,12 +695,17 @@ function parse(str) {
 }
 
 function stringify(ast) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : parseDefaults;
+  var options = parseDefaults;
+  options.hasOpts = false;
+  if (arguments[1]) {
+    options = Object.assign(parseDefaults, arguments[1]);
+    options.hasOpts = true;
+  }
 
   return Array.isArray(ast) ? (0, _stringify.toHTML)(ast, options) : (0, _stringify.toHTML)([ast], options);
 }
 
-},{"./format":2,"./lexer":5,"./parser":6,"./stringify":7,"./tags":8}],5:[function(require,module,exports){
+},{"./format":2,"./lexer":5,"./parser":6,"./stringify":9,"./tags":10}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1173,6 +1195,519 @@ function parse(state) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var possibleStandardNames = {
+  // HTML
+  accept: 'accept',
+  acceptcharset: 'acceptCharset',
+  'accept-charset': 'acceptCharset',
+  accesskey: 'accessKey',
+  action: 'action',
+  allowfullscreen: 'allowFullScreen',
+  alt: 'alt',
+  as: 'as',
+  async: 'async',
+  autocapitalize: 'autoCapitalize',
+  autocomplete: 'autoComplete',
+  autocorrect: 'autoCorrect',
+  autofocus: 'autoFocus',
+  autoplay: 'autoPlay',
+  autosave: 'autoSave',
+  capture: 'capture',
+  cellpadding: 'cellPadding',
+  cellspacing: 'cellSpacing',
+  challenge: 'challenge',
+  charset: 'charSet',
+  checked: 'checked',
+  children: 'children',
+  cite: 'cite',
+  class: 'className',
+  classid: 'classID',
+  classname: 'className',
+  cols: 'cols',
+  colspan: 'colSpan',
+  content: 'content',
+  contenteditable: 'contentEditable',
+  contextmenu: 'contextMenu',
+  controls: 'controls',
+  controlslist: 'controlsList',
+  coords: 'coords',
+  crossorigin: 'crossOrigin',
+  dangerouslysetinnerhtml: 'dangerouslySetInnerHTML',
+  data: 'data',
+  datetime: 'dateTime',
+  default: 'default',
+  defaultchecked: 'defaultChecked',
+  defaultvalue: 'defaultValue',
+  defer: 'defer',
+  dir: 'dir',
+  disabled: 'disabled',
+  download: 'download',
+  draggable: 'draggable',
+  enctype: 'encType',
+  for: 'htmlFor',
+  form: 'form',
+  formmethod: 'formMethod',
+  formaction: 'formAction',
+  formenctype: 'formEncType',
+  formnovalidate: 'formNoValidate',
+  formtarget: 'formTarget',
+  frameborder: 'frameBorder',
+  headers: 'headers',
+  height: 'height',
+  hidden: 'hidden',
+  high: 'high',
+  href: 'href',
+  hreflang: 'hrefLang',
+  htmlfor: 'htmlFor',
+  httpequiv: 'httpEquiv',
+  'http-equiv': 'httpEquiv',
+  icon: 'icon',
+  id: 'id',
+  innerhtml: 'innerHTML',
+  inputmode: 'inputMode',
+  integrity: 'integrity',
+  is: 'is',
+  itemid: 'itemID',
+  itemprop: 'itemProp',
+  itemref: 'itemRef',
+  itemscope: 'itemScope',
+  itemtype: 'itemType',
+  keyparams: 'keyParams',
+  keytype: 'keyType',
+  kind: 'kind',
+  label: 'label',
+  lang: 'lang',
+  list: 'list',
+  loop: 'loop',
+  low: 'low',
+  manifest: 'manifest',
+  marginwidth: 'marginWidth',
+  marginheight: 'marginHeight',
+  max: 'max',
+  maxlength: 'maxLength',
+  media: 'media',
+  mediagroup: 'mediaGroup',
+  method: 'method',
+  min: 'min',
+  minlength: 'minLength',
+  multiple: 'multiple',
+  muted: 'muted',
+  name: 'name',
+  nomodule: 'noModule',
+  nonce: 'nonce',
+  novalidate: 'noValidate',
+  open: 'open',
+  optimum: 'optimum',
+  pattern: 'pattern',
+  placeholder: 'placeholder',
+  playsinline: 'playsInline',
+  poster: 'poster',
+  preload: 'preload',
+  profile: 'profile',
+  radiogroup: 'radioGroup',
+  readonly: 'readOnly',
+  referrerpolicy: 'referrerPolicy',
+  rel: 'rel',
+  required: 'required',
+  reversed: 'reversed',
+  role: 'role',
+  rows: 'rows',
+  rowspan: 'rowSpan',
+  sandbox: 'sandbox',
+  scope: 'scope',
+  scoped: 'scoped',
+  scrolling: 'scrolling',
+  seamless: 'seamless',
+  selected: 'selected',
+  shape: 'shape',
+  size: 'size',
+  sizes: 'sizes',
+  span: 'span',
+  spellcheck: 'spellCheck',
+  src: 'src',
+  srcdoc: 'srcDoc',
+  srclang: 'srcLang',
+  srcset: 'srcSet',
+  start: 'start',
+  step: 'step',
+  style: 'style',
+  summary: 'summary',
+  tabindex: 'tabIndex',
+  target: 'target',
+  title: 'title',
+  type: 'type',
+  usemap: 'useMap',
+  value: 'value',
+  width: 'width',
+  wmode: 'wmode',
+  wrap: 'wrap',
+
+  // SVG
+  about: 'about',
+  accentheight: 'accentHeight',
+  'accent-height': 'accentHeight',
+  accumulate: 'accumulate',
+  additive: 'additive',
+  alignmentbaseline: 'alignmentBaseline',
+  'alignment-baseline': 'alignmentBaseline',
+  allowreorder: 'allowReorder',
+  alphabetic: 'alphabetic',
+  amplitude: 'amplitude',
+  arabicform: 'arabicForm',
+  'arabic-form': 'arabicForm',
+  ascent: 'ascent',
+  attributename: 'attributeName',
+  attributetype: 'attributeType',
+  autoreverse: 'autoReverse',
+  azimuth: 'azimuth',
+  basefrequency: 'baseFrequency',
+  baselineshift: 'baselineShift',
+  'baseline-shift': 'baselineShift',
+  baseprofile: 'baseProfile',
+  bbox: 'bbox',
+  begin: 'begin',
+  bias: 'bias',
+  by: 'by',
+  calcmode: 'calcMode',
+  capheight: 'capHeight',
+  'cap-height': 'capHeight',
+  clip: 'clip',
+  clippath: 'clipPath',
+  'clip-path': 'clipPath',
+  clippathunits: 'clipPathUnits',
+  cliprule: 'clipRule',
+  'clip-rule': 'clipRule',
+  color: 'color',
+  colorinterpolation: 'colorInterpolation',
+  'color-interpolation': 'colorInterpolation',
+  colorinterpolationfilters: 'colorInterpolationFilters',
+  'color-interpolation-filters': 'colorInterpolationFilters',
+  colorprofile: 'colorProfile',
+  'color-profile': 'colorProfile',
+  colorrendering: 'colorRendering',
+  'color-rendering': 'colorRendering',
+  contentscripttype: 'contentScriptType',
+  contentstyletype: 'contentStyleType',
+  cursor: 'cursor',
+  cx: 'cx',
+  cy: 'cy',
+  d: 'd',
+  datatype: 'datatype',
+  decelerate: 'decelerate',
+  descent: 'descent',
+  diffuseconstant: 'diffuseConstant',
+  direction: 'direction',
+  display: 'display',
+  divisor: 'divisor',
+  dominantbaseline: 'dominantBaseline',
+  'dominant-baseline': 'dominantBaseline',
+  dur: 'dur',
+  dx: 'dx',
+  dy: 'dy',
+  edgemode: 'edgeMode',
+  elevation: 'elevation',
+  enablebackground: 'enableBackground',
+  'enable-background': 'enableBackground',
+  end: 'end',
+  exponent: 'exponent',
+  externalresourcesrequired: 'externalResourcesRequired',
+  fill: 'fill',
+  fillopacity: 'fillOpacity',
+  'fill-opacity': 'fillOpacity',
+  fillrule: 'fillRule',
+  'fill-rule': 'fillRule',
+  filter: 'filter',
+  filterres: 'filterRes',
+  filterunits: 'filterUnits',
+  floodopacity: 'floodOpacity',
+  'flood-opacity': 'floodOpacity',
+  floodcolor: 'floodColor',
+  'flood-color': 'floodColor',
+  focusable: 'focusable',
+  fontfamily: 'fontFamily',
+  'font-family': 'fontFamily',
+  fontsize: 'fontSize',
+  'font-size': 'fontSize',
+  fontsizeadjust: 'fontSizeAdjust',
+  'font-size-adjust': 'fontSizeAdjust',
+  fontstretch: 'fontStretch',
+  'font-stretch': 'fontStretch',
+  fontstyle: 'fontStyle',
+  'font-style': 'fontStyle',
+  fontvariant: 'fontVariant',
+  'font-variant': 'fontVariant',
+  fontweight: 'fontWeight',
+  'font-weight': 'fontWeight',
+  format: 'format',
+  from: 'from',
+  fx: 'fx',
+  fy: 'fy',
+  g1: 'g1',
+  g2: 'g2',
+  glyphname: 'glyphName',
+  'glyph-name': 'glyphName',
+  glyphorientationhorizontal: 'glyphOrientationHorizontal',
+  'glyph-orientation-horizontal': 'glyphOrientationHorizontal',
+  glyphorientationvertical: 'glyphOrientationVertical',
+  'glyph-orientation-vertical': 'glyphOrientationVertical',
+  glyphref: 'glyphRef',
+  gradienttransform: 'gradientTransform',
+  gradientunits: 'gradientUnits',
+  hanging: 'hanging',
+  horizadvx: 'horizAdvX',
+  'horiz-adv-x': 'horizAdvX',
+  horizoriginx: 'horizOriginX',
+  'horiz-origin-x': 'horizOriginX',
+  ideographic: 'ideographic',
+  imagerendering: 'imageRendering',
+  'image-rendering': 'imageRendering',
+  in2: 'in2',
+  in: 'in',
+  inlist: 'inlist',
+  intercept: 'intercept',
+  k1: 'k1',
+  k2: 'k2',
+  k3: 'k3',
+  k4: 'k4',
+  k: 'k',
+  kernelmatrix: 'kernelMatrix',
+  kernelunitlength: 'kernelUnitLength',
+  kerning: 'kerning',
+  keypoints: 'keyPoints',
+  keysplines: 'keySplines',
+  keytimes: 'keyTimes',
+  lengthadjust: 'lengthAdjust',
+  letterspacing: 'letterSpacing',
+  'letter-spacing': 'letterSpacing',
+  lightingcolor: 'lightingColor',
+  'lighting-color': 'lightingColor',
+  limitingconeangle: 'limitingConeAngle',
+  local: 'local',
+  markerend: 'markerEnd',
+  'marker-end': 'markerEnd',
+  markerheight: 'markerHeight',
+  markermid: 'markerMid',
+  'marker-mid': 'markerMid',
+  markerstart: 'markerStart',
+  'marker-start': 'markerStart',
+  markerunits: 'markerUnits',
+  markerwidth: 'markerWidth',
+  mask: 'mask',
+  maskcontentunits: 'maskContentUnits',
+  maskunits: 'maskUnits',
+  mathematical: 'mathematical',
+  mode: 'mode',
+  numoctaves: 'numOctaves',
+  offset: 'offset',
+  opacity: 'opacity',
+  operator: 'operator',
+  order: 'order',
+  orient: 'orient',
+  orientation: 'orientation',
+  origin: 'origin',
+  overflow: 'overflow',
+  overlineposition: 'overlinePosition',
+  'overline-position': 'overlinePosition',
+  overlinethickness: 'overlineThickness',
+  'overline-thickness': 'overlineThickness',
+  paintorder: 'paintOrder',
+  'paint-order': 'paintOrder',
+  panose1: 'panose1',
+  'panose-1': 'panose1',
+  pathlength: 'pathLength',
+  patterncontentunits: 'patternContentUnits',
+  patterntransform: 'patternTransform',
+  patternunits: 'patternUnits',
+  pointerevents: 'pointerEvents',
+  'pointer-events': 'pointerEvents',
+  points: 'points',
+  pointsatx: 'pointsAtX',
+  pointsaty: 'pointsAtY',
+  pointsatz: 'pointsAtZ',
+  prefix: 'prefix',
+  preservealpha: 'preserveAlpha',
+  preserveaspectratio: 'preserveAspectRatio',
+  primitiveunits: 'primitiveUnits',
+  property: 'property',
+  r: 'r',
+  radius: 'radius',
+  refx: 'refX',
+  refy: 'refY',
+  renderingintent: 'renderingIntent',
+  'rendering-intent': 'renderingIntent',
+  repeatcount: 'repeatCount',
+  repeatdur: 'repeatDur',
+  requiredextensions: 'requiredExtensions',
+  requiredfeatures: 'requiredFeatures',
+  resource: 'resource',
+  restart: 'restart',
+  result: 'result',
+  results: 'results',
+  rotate: 'rotate',
+  rx: 'rx',
+  ry: 'ry',
+  scale: 'scale',
+  security: 'security',
+  seed: 'seed',
+  shaperendering: 'shapeRendering',
+  'shape-rendering': 'shapeRendering',
+  slope: 'slope',
+  spacing: 'spacing',
+  specularconstant: 'specularConstant',
+  specularexponent: 'specularExponent',
+  speed: 'speed',
+  spreadmethod: 'spreadMethod',
+  startoffset: 'startOffset',
+  stddeviation: 'stdDeviation',
+  stemh: 'stemh',
+  stemv: 'stemv',
+  stitchtiles: 'stitchTiles',
+  stopcolor: 'stopColor',
+  'stop-color': 'stopColor',
+  stopopacity: 'stopOpacity',
+  'stop-opacity': 'stopOpacity',
+  strikethroughposition: 'strikethroughPosition',
+  'strikethrough-position': 'strikethroughPosition',
+  strikethroughthickness: 'strikethroughThickness',
+  'strikethrough-thickness': 'strikethroughThickness',
+  string: 'string',
+  stroke: 'stroke',
+  strokedasharray: 'strokeDasharray',
+  'stroke-dasharray': 'strokeDasharray',
+  strokedashoffset: 'strokeDashoffset',
+  'stroke-dashoffset': 'strokeDashoffset',
+  strokelinecap: 'strokeLinecap',
+  'stroke-linecap': 'strokeLinecap',
+  strokelinejoin: 'strokeLinejoin',
+  'stroke-linejoin': 'strokeLinejoin',
+  strokemiterlimit: 'strokeMiterlimit',
+  'stroke-miterlimit': 'strokeMiterlimit',
+  strokewidth: 'strokeWidth',
+  'stroke-width': 'strokeWidth',
+  strokeopacity: 'strokeOpacity',
+  'stroke-opacity': 'strokeOpacity',
+  suppresscontenteditablewarning: 'suppressContentEditableWarning',
+  suppresshydrationwarning: 'suppressHydrationWarning',
+  surfacescale: 'surfaceScale',
+  systemlanguage: 'systemLanguage',
+  tablevalues: 'tableValues',
+  targetx: 'targetX',
+  targety: 'targetY',
+  textanchor: 'textAnchor',
+  'text-anchor': 'textAnchor',
+  textdecoration: 'textDecoration',
+  'text-decoration': 'textDecoration',
+  textlength: 'textLength',
+  textrendering: 'textRendering',
+  'text-rendering': 'textRendering',
+  to: 'to',
+  transform: 'transform',
+  typeof: 'typeof',
+  u1: 'u1',
+  u2: 'u2',
+  underlineposition: 'underlinePosition',
+  'underline-position': 'underlinePosition',
+  underlinethickness: 'underlineThickness',
+  'underline-thickness': 'underlineThickness',
+  unicode: 'unicode',
+  unicodebidi: 'unicodeBidi',
+  'unicode-bidi': 'unicodeBidi',
+  unicoderange: 'unicodeRange',
+  'unicode-range': 'unicodeRange',
+  unitsperem: 'unitsPerEm',
+  'units-per-em': 'unitsPerEm',
+  unselectable: 'unselectable',
+  valphabetic: 'vAlphabetic',
+  'v-alphabetic': 'vAlphabetic',
+  values: 'values',
+  vectoreffect: 'vectorEffect',
+  'vector-effect': 'vectorEffect',
+  version: 'version',
+  vertadvy: 'vertAdvY',
+  'vert-adv-y': 'vertAdvY',
+  vertoriginx: 'vertOriginX',
+  'vert-origin-x': 'vertOriginX',
+  vertoriginy: 'vertOriginY',
+  'vert-origin-y': 'vertOriginY',
+  vhanging: 'vHanging',
+  'v-hanging': 'vHanging',
+  videographic: 'vIdeographic',
+  'v-ideographic': 'vIdeographic',
+  viewbox: 'viewBox',
+  viewtarget: 'viewTarget',
+  visibility: 'visibility',
+  vmathematical: 'vMathematical',
+  'v-mathematical': 'vMathematical',
+  vocab: 'vocab',
+  widths: 'widths',
+  wordspacing: 'wordSpacing',
+  'word-spacing': 'wordSpacing',
+  writingmode: 'writingMode',
+  'writing-mode': 'writingMode',
+  x1: 'x1',
+  x2: 'x2',
+  x: 'x',
+  xchannelselector: 'xChannelSelector',
+  xheight: 'xHeight',
+  'x-height': 'xHeight',
+  xlinkactuate: 'xlinkActuate',
+  'xlink:actuate': 'xlinkActuate',
+  xlinkarcrole: 'xlinkArcrole',
+  'xlink:arcrole': 'xlinkArcrole',
+  xlinkhref: 'xlinkHref',
+  'xlink:href': 'xlinkHref',
+  xlinkrole: 'xlinkRole',
+  'xlink:role': 'xlinkRole',
+  xlinkshow: 'xlinkShow',
+  'xlink:show': 'xlinkShow',
+  xlinktitle: 'xlinkTitle',
+  'xlink:title': 'xlinkTitle',
+  xlinktype: 'xlinkType',
+  'xlink:type': 'xlinkType',
+  xmlbase: 'xmlBase',
+  'xml:base': 'xmlBase',
+  xmllang: 'xmlLang',
+  'xml:lang': 'xmlLang',
+  xmlns: 'xmlns',
+  'xml:space': 'xmlSpace',
+  xmlnsxlink: 'xmlnsXlink',
+  'xmlns:xlink': 'xmlnsXlink',
+  xmlspace: 'xmlSpace',
+  y1: 'y1',
+  y2: 'y2',
+  y: 'y',
+  ychannelselector: 'yChannelSelector',
+  z: 'z',
+  zoomandpan: 'zoomAndPan'
+};
+
+exports.default = possibleStandardNames;
+
+},{}],8:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _possibleStandardName;
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var possibleStandardNames = (_possibleStandardName = {
+  // HTML
+  accept: 'accept',
+  acceptCharset: 'acceptcharset'
+}, _defineProperty(_possibleStandardName, 'acceptCharset', 'accept-charset'), _defineProperty(_possibleStandardName, 'accessKey', 'accesskey'), _defineProperty(_possibleStandardName, 'action', 'action'), _defineProperty(_possibleStandardName, 'allowFullScreen', 'allowfullscreen'), _defineProperty(_possibleStandardName, 'alt', 'alt'), _defineProperty(_possibleStandardName, 'as', 'as'), _defineProperty(_possibleStandardName, 'async', 'async'), _defineProperty(_possibleStandardName, 'autoCapitalize', 'autocapitalize'), _defineProperty(_possibleStandardName, 'autoComplete', 'autocomplete'), _defineProperty(_possibleStandardName, 'autoCorrect', 'autocorrect'), _defineProperty(_possibleStandardName, 'autoFocus', 'autofocus'), _defineProperty(_possibleStandardName, 'autoPlay', 'autoplay'), _defineProperty(_possibleStandardName, 'autoSave', 'autosave'), _defineProperty(_possibleStandardName, 'capture', 'capture'), _defineProperty(_possibleStandardName, 'cellPadding', 'cellpadding'), _defineProperty(_possibleStandardName, 'cellSpacing', 'cellspacing'), _defineProperty(_possibleStandardName, 'challenge', 'challenge'), _defineProperty(_possibleStandardName, 'charSet', 'charset'), _defineProperty(_possibleStandardName, 'checked', 'checked'), _defineProperty(_possibleStandardName, 'children', 'children'), _defineProperty(_possibleStandardName, 'cite', 'cite'), _defineProperty(_possibleStandardName, 'className', 'class'), _defineProperty(_possibleStandardName, 'classID', 'classid'), _defineProperty(_possibleStandardName, 'cols', 'cols'), _defineProperty(_possibleStandardName, 'colSpan', 'colspan'), _defineProperty(_possibleStandardName, 'content', 'content'), _defineProperty(_possibleStandardName, 'contentEditable', 'contenteditable'), _defineProperty(_possibleStandardName, 'contextMenu', 'contextmenu'), _defineProperty(_possibleStandardName, 'controls', 'controls'), _defineProperty(_possibleStandardName, 'controlsList', 'controlslist'), _defineProperty(_possibleStandardName, 'coords', 'coords'), _defineProperty(_possibleStandardName, 'crossOrigin', 'crossorigin'), _defineProperty(_possibleStandardName, 'dangerouslySetInnerHTML', 'dangerouslysetinnerhtml'), _defineProperty(_possibleStandardName, 'data', 'data'), _defineProperty(_possibleStandardName, 'dateTime', 'datetime'), _defineProperty(_possibleStandardName, 'default', 'default'), _defineProperty(_possibleStandardName, 'defaultChecked', 'defaultchecked'), _defineProperty(_possibleStandardName, 'defaultValue', 'defaultvalue'), _defineProperty(_possibleStandardName, 'defer', 'defer'), _defineProperty(_possibleStandardName, 'dir', 'dir'), _defineProperty(_possibleStandardName, 'disabled', 'disabled'), _defineProperty(_possibleStandardName, 'download', 'download'), _defineProperty(_possibleStandardName, 'draggable', 'draggable'), _defineProperty(_possibleStandardName, 'encType', 'enctype'), _defineProperty(_possibleStandardName, 'htmlFor', 'for'), _defineProperty(_possibleStandardName, 'form', 'form'), _defineProperty(_possibleStandardName, 'formMethod', 'formmethod'), _defineProperty(_possibleStandardName, 'formAction', 'formaction'), _defineProperty(_possibleStandardName, 'formEncType', 'formenctype'), _defineProperty(_possibleStandardName, 'formNoValidate', 'formnovalidate'), _defineProperty(_possibleStandardName, 'formTarget', 'formtarget'), _defineProperty(_possibleStandardName, 'frameBorder', 'frameborder'), _defineProperty(_possibleStandardName, 'headers', 'headers'), _defineProperty(_possibleStandardName, 'height', 'height'), _defineProperty(_possibleStandardName, 'hidden', 'hidden'), _defineProperty(_possibleStandardName, 'high', 'high'), _defineProperty(_possibleStandardName, 'href', 'href'), _defineProperty(_possibleStandardName, 'hrefLang', 'hreflang'), _defineProperty(_possibleStandardName, 'htmlFor', 'htmlfor'), _defineProperty(_possibleStandardName, 'httpEquiv', 'httpequiv'), _defineProperty(_possibleStandardName, 'httpEquiv', 'http-equiv'), _defineProperty(_possibleStandardName, 'icon', 'icon'), _defineProperty(_possibleStandardName, 'id', 'id'), _defineProperty(_possibleStandardName, 'innerHTML', 'innerhtml'), _defineProperty(_possibleStandardName, 'inputMode', 'inputmode'), _defineProperty(_possibleStandardName, 'integrity', 'integrity'), _defineProperty(_possibleStandardName, 'is', 'is'), _defineProperty(_possibleStandardName, 'itemID', 'itemid'), _defineProperty(_possibleStandardName, 'itemProp', 'itemprop'), _defineProperty(_possibleStandardName, 'itemRef', 'itemref'), _defineProperty(_possibleStandardName, 'itemScope', 'itemscope'), _defineProperty(_possibleStandardName, 'itemType', 'itemtype'), _defineProperty(_possibleStandardName, 'keyParams', 'keyparams'), _defineProperty(_possibleStandardName, 'keyType', 'keytype'), _defineProperty(_possibleStandardName, 'kind', 'kind'), _defineProperty(_possibleStandardName, 'label', 'label'), _defineProperty(_possibleStandardName, 'lang', 'lang'), _defineProperty(_possibleStandardName, 'list', 'list'), _defineProperty(_possibleStandardName, 'loop', 'loop'), _defineProperty(_possibleStandardName, 'low', 'low'), _defineProperty(_possibleStandardName, 'manifest', 'manifest'), _defineProperty(_possibleStandardName, 'marginWidth', 'marginwidth'), _defineProperty(_possibleStandardName, 'marginHeight', 'marginheight'), _defineProperty(_possibleStandardName, 'max', 'max'), _defineProperty(_possibleStandardName, 'maxLength', 'maxlength'), _defineProperty(_possibleStandardName, 'media', 'media'), _defineProperty(_possibleStandardName, 'mediaGroup', 'mediagroup'), _defineProperty(_possibleStandardName, 'method', 'method'), _defineProperty(_possibleStandardName, 'min', 'min'), _defineProperty(_possibleStandardName, 'minLength', 'minlength'), _defineProperty(_possibleStandardName, 'multiple', 'multiple'), _defineProperty(_possibleStandardName, 'muted', 'muted'), _defineProperty(_possibleStandardName, 'name', 'name'), _defineProperty(_possibleStandardName, 'noModule', 'nomodule'), _defineProperty(_possibleStandardName, 'nonce', 'nonce'), _defineProperty(_possibleStandardName, 'noValidate', 'novalidate'), _defineProperty(_possibleStandardName, 'open', 'open'), _defineProperty(_possibleStandardName, 'optimum', 'optimum'), _defineProperty(_possibleStandardName, 'pattern', 'pattern'), _defineProperty(_possibleStandardName, 'placeholder', 'placeholder'), _defineProperty(_possibleStandardName, 'playsInline', 'playsinline'), _defineProperty(_possibleStandardName, 'poster', 'poster'), _defineProperty(_possibleStandardName, 'preload', 'preload'), _defineProperty(_possibleStandardName, 'profile', 'profile'), _defineProperty(_possibleStandardName, 'radioGroup', 'radiogroup'), _defineProperty(_possibleStandardName, 'readOnly', 'readonly'), _defineProperty(_possibleStandardName, 'referrerPolicy', 'referrerpolicy'), _defineProperty(_possibleStandardName, 'rel', 'rel'), _defineProperty(_possibleStandardName, 'required', 'required'), _defineProperty(_possibleStandardName, 'reversed', 'reversed'), _defineProperty(_possibleStandardName, 'role', 'role'), _defineProperty(_possibleStandardName, 'rows', 'rows'), _defineProperty(_possibleStandardName, 'rowSpan', 'rowspan'), _defineProperty(_possibleStandardName, 'sandbox', 'sandbox'), _defineProperty(_possibleStandardName, 'scope', 'scope'), _defineProperty(_possibleStandardName, 'scoped', 'scoped'), _defineProperty(_possibleStandardName, 'scrolling', 'scrolling'), _defineProperty(_possibleStandardName, 'seamless', 'seamless'), _defineProperty(_possibleStandardName, 'selected', 'selected'), _defineProperty(_possibleStandardName, 'shape', 'shape'), _defineProperty(_possibleStandardName, 'size', 'size'), _defineProperty(_possibleStandardName, 'sizes', 'sizes'), _defineProperty(_possibleStandardName, 'span', 'span'), _defineProperty(_possibleStandardName, 'spellCheck', 'spellcheck'), _defineProperty(_possibleStandardName, 'src', 'src'), _defineProperty(_possibleStandardName, 'srcDoc', 'srcdoc'), _defineProperty(_possibleStandardName, 'srcLang', 'srclang'), _defineProperty(_possibleStandardName, 'srcSet', 'srcset'), _defineProperty(_possibleStandardName, 'start', 'start'), _defineProperty(_possibleStandardName, 'step', 'step'), _defineProperty(_possibleStandardName, 'style', 'style'), _defineProperty(_possibleStandardName, 'summary', 'summary'), _defineProperty(_possibleStandardName, 'tabIndex', 'tabindex'), _defineProperty(_possibleStandardName, 'target', 'target'), _defineProperty(_possibleStandardName, 'title', 'title'), _defineProperty(_possibleStandardName, 'type', 'type'), _defineProperty(_possibleStandardName, 'useMap', 'usemap'), _defineProperty(_possibleStandardName, 'value', 'value'), _defineProperty(_possibleStandardName, 'width', 'width'), _defineProperty(_possibleStandardName, 'wmode', 'wmode'), _defineProperty(_possibleStandardName, 'wrap', 'wrap'), _defineProperty(_possibleStandardName, 'about', 'about'), _defineProperty(_possibleStandardName, 'accentHeight', 'accentheight'), _defineProperty(_possibleStandardName, 'accentHeight', 'accent-height'), _defineProperty(_possibleStandardName, 'accumulate', 'accumulate'), _defineProperty(_possibleStandardName, 'additive', 'additive'), _defineProperty(_possibleStandardName, 'alignmentBaseline', 'alignmentbaseline'), _defineProperty(_possibleStandardName, 'alignmentBaseline', 'alignment-baseline'), _defineProperty(_possibleStandardName, 'allowReorder', 'allowreorder'), _defineProperty(_possibleStandardName, 'alphabetic', 'alphabetic'), _defineProperty(_possibleStandardName, 'amplitude', 'amplitude'), _defineProperty(_possibleStandardName, 'arabicForm', 'arabicform'), _defineProperty(_possibleStandardName, 'arabicForm', 'arabic-form'), _defineProperty(_possibleStandardName, 'ascent', 'ascent'), _defineProperty(_possibleStandardName, 'attributeName', 'attributename'), _defineProperty(_possibleStandardName, 'attributeType', 'attributetype'), _defineProperty(_possibleStandardName, 'autoReverse', 'autoreverse'), _defineProperty(_possibleStandardName, 'azimuth', 'azimuth'), _defineProperty(_possibleStandardName, 'baseFrequency', 'basefrequency'), _defineProperty(_possibleStandardName, 'baselineShift', 'baselineshift'), _defineProperty(_possibleStandardName, 'baselineShift', 'baseline-shift'), _defineProperty(_possibleStandardName, 'baseProfile', 'baseprofile'), _defineProperty(_possibleStandardName, 'bbox', 'bbox'), _defineProperty(_possibleStandardName, 'begin', 'begin'), _defineProperty(_possibleStandardName, 'bias', 'bias'), _defineProperty(_possibleStandardName, 'by', 'by'), _defineProperty(_possibleStandardName, 'calcMode', 'calcmode'), _defineProperty(_possibleStandardName, 'capHeight', 'capheight'), _defineProperty(_possibleStandardName, 'capHeight', 'cap-height'), _defineProperty(_possibleStandardName, 'clip', 'clip'), _defineProperty(_possibleStandardName, 'clipPath', 'clippath'), _defineProperty(_possibleStandardName, 'clipPath', 'clip-path'), _defineProperty(_possibleStandardName, 'clipPathUnits', 'clippathunits'), _defineProperty(_possibleStandardName, 'clipRule', 'cliprule'), _defineProperty(_possibleStandardName, 'clipRule', 'clip-rule'), _defineProperty(_possibleStandardName, 'color', 'color'), _defineProperty(_possibleStandardName, 'colorInterpolation', 'colorinterpolation'), _defineProperty(_possibleStandardName, 'colorInterpolation', 'color-interpolation'), _defineProperty(_possibleStandardName, 'colorInterpolationFilters', 'colorinterpolationfilters'), _defineProperty(_possibleStandardName, 'colorInterpolationFilters', 'color-interpolation-filters'), _defineProperty(_possibleStandardName, 'colorProfile', 'colorprofile'), _defineProperty(_possibleStandardName, 'colorProfile', 'color-profile'), _defineProperty(_possibleStandardName, 'colorRendering', 'colorrendering'), _defineProperty(_possibleStandardName, 'colorRendering', 'color-rendering'), _defineProperty(_possibleStandardName, 'contentScriptType', 'contentscripttype'), _defineProperty(_possibleStandardName, 'contentStyleType', 'contentstyletype'), _defineProperty(_possibleStandardName, 'cursor', 'cursor'), _defineProperty(_possibleStandardName, 'cx', 'cx'), _defineProperty(_possibleStandardName, 'cy', 'cy'), _defineProperty(_possibleStandardName, 'd', 'd'), _defineProperty(_possibleStandardName, 'datatype', 'datatype'), _defineProperty(_possibleStandardName, 'decelerate', 'decelerate'), _defineProperty(_possibleStandardName, 'descent', 'descent'), _defineProperty(_possibleStandardName, 'diffuseConstant', 'diffuseconstant'), _defineProperty(_possibleStandardName, 'direction', 'direction'), _defineProperty(_possibleStandardName, 'display', 'display'), _defineProperty(_possibleStandardName, 'divisor', 'divisor'), _defineProperty(_possibleStandardName, 'dominantBaseline', 'dominantbaseline'), _defineProperty(_possibleStandardName, 'dominantBaseline', 'dominant-baseline'), _defineProperty(_possibleStandardName, 'dur', 'dur'), _defineProperty(_possibleStandardName, 'dx', 'dx'), _defineProperty(_possibleStandardName, 'dy', 'dy'), _defineProperty(_possibleStandardName, 'edgeMode', 'edgemode'), _defineProperty(_possibleStandardName, 'elevation', 'elevation'), _defineProperty(_possibleStandardName, 'enableBackground', 'enablebackground'), _defineProperty(_possibleStandardName, 'enableBackground', 'enable-background'), _defineProperty(_possibleStandardName, 'end', 'end'), _defineProperty(_possibleStandardName, 'exponent', 'exponent'), _defineProperty(_possibleStandardName, 'externalResourcesRequired', 'externalresourcesrequired'), _defineProperty(_possibleStandardName, 'fill', 'fill'), _defineProperty(_possibleStandardName, 'fillOpacity', 'fillopacity'), _defineProperty(_possibleStandardName, 'fillOpacity', 'fill-opacity'), _defineProperty(_possibleStandardName, 'fillRule', 'fillrule'), _defineProperty(_possibleStandardName, 'fillRule', 'fill-rule'), _defineProperty(_possibleStandardName, 'filter', 'filter'), _defineProperty(_possibleStandardName, 'filterRes', 'filterres'), _defineProperty(_possibleStandardName, 'filterUnits', 'filterunits'), _defineProperty(_possibleStandardName, 'floodOpacity', 'floodopacity'), _defineProperty(_possibleStandardName, 'floodOpacity', 'flood-opacity'), _defineProperty(_possibleStandardName, 'floodColor', 'floodcolor'), _defineProperty(_possibleStandardName, 'floodColor', 'flood-color'), _defineProperty(_possibleStandardName, 'focusable', 'focusable'), _defineProperty(_possibleStandardName, 'fontFamily', 'fontfamily'), _defineProperty(_possibleStandardName, 'fontFamily', 'font-family'), _defineProperty(_possibleStandardName, 'fontSize', 'fontsize'), _defineProperty(_possibleStandardName, 'fontSize', 'font-size'), _defineProperty(_possibleStandardName, 'fontSizeAdjust', 'fontsizeadjust'), _defineProperty(_possibleStandardName, 'fontSizeAdjust', 'font-size-adjust'), _defineProperty(_possibleStandardName, 'fontStretch', 'fontstretch'), _defineProperty(_possibleStandardName, 'fontStretch', 'font-stretch'), _defineProperty(_possibleStandardName, 'fontStyle', 'fontstyle'), _defineProperty(_possibleStandardName, 'fontStyle', 'font-style'), _defineProperty(_possibleStandardName, 'fontVariant', 'fontvariant'), _defineProperty(_possibleStandardName, 'fontVariant', 'font-variant'), _defineProperty(_possibleStandardName, 'fontWeight', 'fontweight'), _defineProperty(_possibleStandardName, 'fontWeight', 'font-weight'), _defineProperty(_possibleStandardName, 'format', 'format'), _defineProperty(_possibleStandardName, 'from', 'from'), _defineProperty(_possibleStandardName, 'fx', 'fx'), _defineProperty(_possibleStandardName, 'fy', 'fy'), _defineProperty(_possibleStandardName, 'g1', 'g1'), _defineProperty(_possibleStandardName, 'g2', 'g2'), _defineProperty(_possibleStandardName, 'glyphName', 'glyphname'), _defineProperty(_possibleStandardName, 'glyphName', 'glyph-name'), _defineProperty(_possibleStandardName, 'glyphOrientationHorizontal', 'glyphorientationhorizontal'), _defineProperty(_possibleStandardName, 'glyphOrientationHorizontal', 'glyph-orientation-horizontal'), _defineProperty(_possibleStandardName, 'glyphOrientationVertical', 'glyphorientationvertical'), _defineProperty(_possibleStandardName, 'glyphOrientationVertical', 'glyph-orientation-vertical'), _defineProperty(_possibleStandardName, 'glyphRef', 'glyphref'), _defineProperty(_possibleStandardName, 'gradientTransform', 'gradienttransform'), _defineProperty(_possibleStandardName, 'gradientUnits', 'gradientunits'), _defineProperty(_possibleStandardName, 'hanging', 'hanging'), _defineProperty(_possibleStandardName, 'horizAdvX', 'horizadvx'), _defineProperty(_possibleStandardName, 'horizAdvX', 'horiz-adv-x'), _defineProperty(_possibleStandardName, 'horizOriginX', 'horizoriginx'), _defineProperty(_possibleStandardName, 'horizOriginX', 'horiz-origin-x'), _defineProperty(_possibleStandardName, 'ideographic', 'ideographic'), _defineProperty(_possibleStandardName, 'imageRendering', 'imagerendering'), _defineProperty(_possibleStandardName, 'imageRendering', 'image-rendering'), _defineProperty(_possibleStandardName, 'in2', 'in2'), _defineProperty(_possibleStandardName, 'in', 'in'), _defineProperty(_possibleStandardName, 'inlist', 'inlist'), _defineProperty(_possibleStandardName, 'intercept', 'intercept'), _defineProperty(_possibleStandardName, 'k1', 'k1'), _defineProperty(_possibleStandardName, 'k2', 'k2'), _defineProperty(_possibleStandardName, 'k3', 'k3'), _defineProperty(_possibleStandardName, 'k4', 'k4'), _defineProperty(_possibleStandardName, 'k', 'k'), _defineProperty(_possibleStandardName, 'kernelMatrix', 'kernelmatrix'), _defineProperty(_possibleStandardName, 'kernelUnitLength', 'kernelunitlength'), _defineProperty(_possibleStandardName, 'kerning', 'kerning'), _defineProperty(_possibleStandardName, 'keyPoints', 'keypoints'), _defineProperty(_possibleStandardName, 'keySplines', 'keysplines'), _defineProperty(_possibleStandardName, 'keyTimes', 'keytimes'), _defineProperty(_possibleStandardName, 'lengthAdjust', 'lengthadjust'), _defineProperty(_possibleStandardName, 'letterSpacing', 'letterspacing'), _defineProperty(_possibleStandardName, 'letterSpacing', 'letter-spacing'), _defineProperty(_possibleStandardName, 'lightingColor', 'lightingcolor'), _defineProperty(_possibleStandardName, 'lightingColor', 'lighting-color'), _defineProperty(_possibleStandardName, 'limitingConeAngle', 'limitingconeangle'), _defineProperty(_possibleStandardName, 'local', 'local'), _defineProperty(_possibleStandardName, 'markerEnd', 'markerend'), _defineProperty(_possibleStandardName, 'markerEnd', 'marker-end'), _defineProperty(_possibleStandardName, 'markerHeight', 'markerheight'), _defineProperty(_possibleStandardName, 'markerMid', 'markermid'), _defineProperty(_possibleStandardName, 'markerMid', 'marker-mid'), _defineProperty(_possibleStandardName, 'markerStart', 'markerstart'), _defineProperty(_possibleStandardName, 'markerStart', 'marker-start'), _defineProperty(_possibleStandardName, 'markerUnits', 'markerunits'), _defineProperty(_possibleStandardName, 'markerWidth', 'markerwidth'), _defineProperty(_possibleStandardName, 'mask', 'mask'), _defineProperty(_possibleStandardName, 'maskContentUnits', 'maskcontentunits'), _defineProperty(_possibleStandardName, 'maskUnits', 'maskunits'), _defineProperty(_possibleStandardName, 'mathematical', 'mathematical'), _defineProperty(_possibleStandardName, 'mode', 'mode'), _defineProperty(_possibleStandardName, 'numOctaves', 'numoctaves'), _defineProperty(_possibleStandardName, 'offset', 'offset'), _defineProperty(_possibleStandardName, 'opacity', 'opacity'), _defineProperty(_possibleStandardName, 'operator', 'operator'), _defineProperty(_possibleStandardName, 'order', 'order'), _defineProperty(_possibleStandardName, 'orient', 'orient'), _defineProperty(_possibleStandardName, 'orientation', 'orientation'), _defineProperty(_possibleStandardName, 'origin', 'origin'), _defineProperty(_possibleStandardName, 'overflow', 'overflow'), _defineProperty(_possibleStandardName, 'overlinePosition', 'overlineposition'), _defineProperty(_possibleStandardName, 'overlinePosition', 'overline-position'), _defineProperty(_possibleStandardName, 'overlineThickness', 'overlinethickness'), _defineProperty(_possibleStandardName, 'overlineThickness', 'overline-thickness'), _defineProperty(_possibleStandardName, 'paintOrder', 'paintorder'), _defineProperty(_possibleStandardName, 'paintOrder', 'paint-order'), _defineProperty(_possibleStandardName, 'panose1', 'panose1'), _defineProperty(_possibleStandardName, 'panose1', 'panose-1'), _defineProperty(_possibleStandardName, 'pathLength', 'pathlength'), _defineProperty(_possibleStandardName, 'patternContentUnits', 'patterncontentunits'), _defineProperty(_possibleStandardName, 'patternTransform', 'patterntransform'), _defineProperty(_possibleStandardName, 'patternUnits', 'patternunits'), _defineProperty(_possibleStandardName, 'pointerEvents', 'pointerevents'), _defineProperty(_possibleStandardName, 'pointerEvents', 'pointer-events'), _defineProperty(_possibleStandardName, 'points', 'points'), _defineProperty(_possibleStandardName, 'pointsAtX', 'pointsatx'), _defineProperty(_possibleStandardName, 'pointsAtY', 'pointsaty'), _defineProperty(_possibleStandardName, 'pointsAtZ', 'pointsatz'), _defineProperty(_possibleStandardName, 'prefix', 'prefix'), _defineProperty(_possibleStandardName, 'preserveAlpha', 'preservealpha'), _defineProperty(_possibleStandardName, 'preserveAspectRatio', 'preserveaspectratio'), _defineProperty(_possibleStandardName, 'primitiveUnits', 'primitiveunits'), _defineProperty(_possibleStandardName, 'property', 'property'), _defineProperty(_possibleStandardName, 'r', 'r'), _defineProperty(_possibleStandardName, 'radius', 'radius'), _defineProperty(_possibleStandardName, 'refX', 'refx'), _defineProperty(_possibleStandardName, 'refY', 'refy'), _defineProperty(_possibleStandardName, 'renderingIntent', 'renderingintent'), _defineProperty(_possibleStandardName, 'renderingIntent', 'rendering-intent'), _defineProperty(_possibleStandardName, 'repeatCount', 'repeatcount'), _defineProperty(_possibleStandardName, 'repeatDur', 'repeatdur'), _defineProperty(_possibleStandardName, 'requiredExtensions', 'requiredextensions'), _defineProperty(_possibleStandardName, 'requiredFeatures', 'requiredfeatures'), _defineProperty(_possibleStandardName, 'resource', 'resource'), _defineProperty(_possibleStandardName, 'restart', 'restart'), _defineProperty(_possibleStandardName, 'result', 'result'), _defineProperty(_possibleStandardName, 'results', 'results'), _defineProperty(_possibleStandardName, 'rotate', 'rotate'), _defineProperty(_possibleStandardName, 'rx', 'rx'), _defineProperty(_possibleStandardName, 'ry', 'ry'), _defineProperty(_possibleStandardName, 'scale', 'scale'), _defineProperty(_possibleStandardName, 'security', 'security'), _defineProperty(_possibleStandardName, 'seed', 'seed'), _defineProperty(_possibleStandardName, 'shapeRendering', 'shaperendering'), _defineProperty(_possibleStandardName, 'shapeRendering', 'shape-rendering'), _defineProperty(_possibleStandardName, 'slope', 'slope'), _defineProperty(_possibleStandardName, 'spacing', 'spacing'), _defineProperty(_possibleStandardName, 'specularConstant', 'specularconstant'), _defineProperty(_possibleStandardName, 'specularExponent', 'specularexponent'), _defineProperty(_possibleStandardName, 'speed', 'speed'), _defineProperty(_possibleStandardName, 'spreadMethod', 'spreadmethod'), _defineProperty(_possibleStandardName, 'startOffset', 'startoffset'), _defineProperty(_possibleStandardName, 'stdDeviation', 'stddeviation'), _defineProperty(_possibleStandardName, 'stemh', 'stemh'), _defineProperty(_possibleStandardName, 'stemv', 'stemv'), _defineProperty(_possibleStandardName, 'stitchTiles', 'stitchtiles'), _defineProperty(_possibleStandardName, 'stopColor', 'stopcolor'), _defineProperty(_possibleStandardName, 'stopColor', 'stop-color'), _defineProperty(_possibleStandardName, 'stopOpacity', 'stopopacity'), _defineProperty(_possibleStandardName, 'stopOpacity', 'stop-opacity'), _defineProperty(_possibleStandardName, 'strikethroughPosition', 'strikethroughposition'), _defineProperty(_possibleStandardName, 'strikethroughPosition', 'strikethrough-position'), _defineProperty(_possibleStandardName, 'strikethroughThickness', 'strikethroughthickness'), _defineProperty(_possibleStandardName, 'strikethroughThickness', 'strikethrough-thickness'), _defineProperty(_possibleStandardName, 'string', 'string'), _defineProperty(_possibleStandardName, 'stroke', 'stroke'), _defineProperty(_possibleStandardName, 'strokeDasharray', 'strokedasharray'), _defineProperty(_possibleStandardName, 'strokeDasharray', 'stroke-dasharray'), _defineProperty(_possibleStandardName, 'strokeDashoffset', 'strokedashoffset'), _defineProperty(_possibleStandardName, 'strokeDashoffset', 'stroke-dashoffset'), _defineProperty(_possibleStandardName, 'strokeLinecap', 'strokelinecap'), _defineProperty(_possibleStandardName, 'strokeLinecap', 'stroke-linecap'), _defineProperty(_possibleStandardName, 'strokeLinejoin', 'strokelinejoin'), _defineProperty(_possibleStandardName, 'strokeLinejoin', 'stroke-linejoin'), _defineProperty(_possibleStandardName, 'strokeMiterlimit', 'strokemiterlimit'), _defineProperty(_possibleStandardName, 'strokeMiterlimit', 'stroke-miterlimit'), _defineProperty(_possibleStandardName, 'strokeWidth', 'strokewidth'), _defineProperty(_possibleStandardName, 'strokeWidth', 'stroke-width'), _defineProperty(_possibleStandardName, 'strokeOpacity', 'strokeopacity'), _defineProperty(_possibleStandardName, 'strokeOpacity', 'stroke-opacity'), _defineProperty(_possibleStandardName, 'suppressContentEditableWarning', 'suppresscontenteditablewarning'), _defineProperty(_possibleStandardName, 'suppressHydrationWarning', 'suppresshydrationwarning'), _defineProperty(_possibleStandardName, 'surfaceScale', 'surfacescale'), _defineProperty(_possibleStandardName, 'systemLanguage', 'systemlanguage'), _defineProperty(_possibleStandardName, 'tableValues', 'tablevalues'), _defineProperty(_possibleStandardName, 'targetX', 'targetx'), _defineProperty(_possibleStandardName, 'targetY', 'targety'), _defineProperty(_possibleStandardName, 'textAnchor', 'textanchor'), _defineProperty(_possibleStandardName, 'textAnchor', 'text-anchor'), _defineProperty(_possibleStandardName, 'textDecoration', 'textdecoration'), _defineProperty(_possibleStandardName, 'textDecoration', 'text-decoration'), _defineProperty(_possibleStandardName, 'textLength', 'textlength'), _defineProperty(_possibleStandardName, 'textRendering', 'textrendering'), _defineProperty(_possibleStandardName, 'textRendering', 'text-rendering'), _defineProperty(_possibleStandardName, 'to', 'to'), _defineProperty(_possibleStandardName, 'transform', 'transform'), _defineProperty(_possibleStandardName, 'typeof', 'typeof'), _defineProperty(_possibleStandardName, 'u1', 'u1'), _defineProperty(_possibleStandardName, 'u2', 'u2'), _defineProperty(_possibleStandardName, 'underlinePosition', 'underlineposition'), _defineProperty(_possibleStandardName, 'underlinePosition', 'underline-position'), _defineProperty(_possibleStandardName, 'underlineThickness', 'underlinethickness'), _defineProperty(_possibleStandardName, 'underlineThickness', 'underline-thickness'), _defineProperty(_possibleStandardName, 'unicode', 'unicode'), _defineProperty(_possibleStandardName, 'unicodeBidi', 'unicodebidi'), _defineProperty(_possibleStandardName, 'unicodeBidi', 'unicode-bidi'), _defineProperty(_possibleStandardName, 'unicodeRange', 'unicoderange'), _defineProperty(_possibleStandardName, 'unicodeRange', 'unicode-range'), _defineProperty(_possibleStandardName, 'unitsPerEm', 'unitsperem'), _defineProperty(_possibleStandardName, 'unitsPerEm', 'units-per-em'), _defineProperty(_possibleStandardName, 'unselectable', 'unselectable'), _defineProperty(_possibleStandardName, 'vAlphabetic', 'valphabetic'), _defineProperty(_possibleStandardName, 'vAlphabetic', 'v-alphabetic'), _defineProperty(_possibleStandardName, 'values', 'values'), _defineProperty(_possibleStandardName, 'vectorEffect', 'vectoreffect'), _defineProperty(_possibleStandardName, 'vectorEffect', 'vector-effect'), _defineProperty(_possibleStandardName, 'version', 'version'), _defineProperty(_possibleStandardName, 'vertAdvY', 'vertadvy'), _defineProperty(_possibleStandardName, 'vertAdvY', 'vert-adv-y'), _defineProperty(_possibleStandardName, 'vertOriginX', 'vertoriginx'), _defineProperty(_possibleStandardName, 'vertOriginX', 'vert-origin-x'), _defineProperty(_possibleStandardName, 'vertOriginY', 'vertoriginy'), _defineProperty(_possibleStandardName, 'vertOriginY', 'vert-origin-y'), _defineProperty(_possibleStandardName, 'vHanging', 'vhanging'), _defineProperty(_possibleStandardName, 'vHanging', 'v-hanging'), _defineProperty(_possibleStandardName, 'vIdeographic', 'videographic'), _defineProperty(_possibleStandardName, 'vIdeographic', 'v-ideographic'), _defineProperty(_possibleStandardName, 'viewBox', 'viewbox'), _defineProperty(_possibleStandardName, 'viewTarget', 'viewtarget'), _defineProperty(_possibleStandardName, 'visibility', 'visibility'), _defineProperty(_possibleStandardName, 'vMathematical', 'vmathematical'), _defineProperty(_possibleStandardName, 'vMathematical', 'v-mathematical'), _defineProperty(_possibleStandardName, 'vocab', 'vocab'), _defineProperty(_possibleStandardName, 'widths', 'widths'), _defineProperty(_possibleStandardName, 'wordSpacing', 'wordspacing'), _defineProperty(_possibleStandardName, 'wordSpacing', 'word-spacing'), _defineProperty(_possibleStandardName, 'writingMode', 'writingmode'), _defineProperty(_possibleStandardName, 'writingMode', 'writing-mode'), _defineProperty(_possibleStandardName, 'x1', 'x1'), _defineProperty(_possibleStandardName, 'x2', 'x2'), _defineProperty(_possibleStandardName, 'x', 'x'), _defineProperty(_possibleStandardName, 'xChannelSelector', 'xchannelselector'), _defineProperty(_possibleStandardName, 'xHeight', 'xheight'), _defineProperty(_possibleStandardName, 'xHeight', 'x-height'), _defineProperty(_possibleStandardName, 'xlinkActuate', 'xlinkactuate'), _defineProperty(_possibleStandardName, 'xlinkActuate', 'xlink:actuate'), _defineProperty(_possibleStandardName, 'xlinkArcrole', 'xlinkarcrole'), _defineProperty(_possibleStandardName, 'xlinkArcrole', 'xlink:arcrole'), _defineProperty(_possibleStandardName, 'xlinkHref', 'xlinkhref'), _defineProperty(_possibleStandardName, 'xlinkHref', 'xlink:href'), _defineProperty(_possibleStandardName, 'xlinkRole', 'xlinkrole'), _defineProperty(_possibleStandardName, 'xlinkRole', 'xlink:role'), _defineProperty(_possibleStandardName, 'xlinkShow', 'xlinkshow'), _defineProperty(_possibleStandardName, 'xlinkShow', 'xlink:show'), _defineProperty(_possibleStandardName, 'xlinkTitle', 'xlinktitle'), _defineProperty(_possibleStandardName, 'xlinkTitle', 'xlink:title'), _defineProperty(_possibleStandardName, 'xlinkType', 'xlinktype'), _defineProperty(_possibleStandardName, 'xlinkType', 'xlink:type'), _defineProperty(_possibleStandardName, 'xmlBase', 'xmlbase'), _defineProperty(_possibleStandardName, 'xmlBase', 'xml:base'), _defineProperty(_possibleStandardName, 'xmlLang', 'xmllang'), _defineProperty(_possibleStandardName, 'xmlLang', 'xml:lang'), _defineProperty(_possibleStandardName, 'xmlns', 'xmlns'), _defineProperty(_possibleStandardName, 'xmlSpace', 'xml:space'), _defineProperty(_possibleStandardName, 'xmlnsXlink', 'xmlnsxlink'), _defineProperty(_possibleStandardName, 'xmlnsXlink', 'xmlns:xlink'), _defineProperty(_possibleStandardName, 'xmlSpace', 'xmlspace'), _defineProperty(_possibleStandardName, 'y1', 'y1'), _defineProperty(_possibleStandardName, 'y2', 'y2'), _defineProperty(_possibleStandardName, 'y', 'y'), _defineProperty(_possibleStandardName, 'yChannelSelector', 'ychannelselector'), _defineProperty(_possibleStandardName, 'z', 'z'), _defineProperty(_possibleStandardName, 'zoomAndPan', 'zoomandpan'), _possibleStandardName);
+
+exports.default = possibleStandardNames;
+
+},{}],9:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -1181,13 +1716,30 @@ exports.toHTML = toHTML;
 
 var _compat = require('./compat');
 
-function formatAttributes(attributes) {
-  return Object.keys(attributes).reduce(function (attrs, key) {
-    var value = attributes[key];
+var _rev_prop_map = require('./rev_prop_map');
+
+var _rev_prop_map2 = _interopRequireDefault(_rev_prop_map);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var options = {
+  attrLowerCase: false,
+  styleAsCss: false
+};
+
+function formatAttributes(attributes, options) {
+  var attrString = Object.keys(attributes).reduce(function (attrs, currentKey) {
+    var key = currentKey;
+    if (options.hasOpts && options.attrLowerCase && _rev_prop_map2.default[currentKey]) key = _rev_prop_map2.default[currentKey];
+
+    var value = attributes[currentKey];
     if (!value) return attrs + ' ' + key;else if (key === 'style' && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object') {
       var styles = '';
-      Object.keys(value).map(function (name) {
-        styles += name + ':' + value[name] + ';';
+      Object.keys(value).map(function (_name) {
+        var name = _name;
+        if (options.hasOpts && options.styleAsCss) name = _name.split(/(?=[A-Z])/).join('-').toLowerCase();
+
+        styles += name + ':' + value[_name] + ';';
       });
       var quoteEscape = styles.indexOf('\'') !== -1;
       var quote = quoteEscape ? '"' : '\'';
@@ -1200,10 +1752,28 @@ function formatAttributes(attributes) {
       var _quote = _quoteEscape ? '"' : '\'';
       return attrs + ' ' + key + '=' + _quote + value + _quote;
     }
+    return attrs;
   }, '');
+
+  attrString = typeof attrString === 'string' && attrString.trim() || '';
+  return attrString.length ? ' ' + attrString : '';
 }
 
-function toHTML(tree, options) {
+var buildTag = function buildTag(tagName, attributes, children, options) {
+
+  return '<' + tagName + formatAttributes(attributes, options) + '>' + (toHTML(children, options) || '') + '</' + tagName + '>';
+};
+
+var buildSelfCloseTag = function buildSelfCloseTag(tagName, attributes, options) {
+  var formatted = formatAttributes(attributes, options);
+  formatted = formatted.length ? formatted + ' ' : formatted;
+  return '<' + tagName + formatted + '/' + '>';
+};
+
+function toHTML(tree, _options) {
+
+  options = options.hasOpts ? Object.assign(options, _options) : _options;
+
   if (typeof tree === 'string') return tree;
   return tree && tree.map(function (node) {
     if (typeof node === 'string') return node;
@@ -1212,13 +1782,13 @@ function toHTML(tree, options) {
     var attributes = node[1];
     var children = node[2];
     var isSelfClosing = (0, _compat.arrayIncludes)(options.voidTags, tagName.toLowerCase());
-    return isSelfClosing ? '<' + tagName + formatAttributes(attributes) + '>' : '<' + tagName + formatAttributes(attributes) + '>' + (toHTML(children, options) || '') + '</' + tagName + '>';
+    return isSelfClosing ? buildSelfCloseTag(tagName, attributes, options) : buildTag(tagName, attributes, children, options);
   }).join('');
 }
 
 exports.default = { toHTML: toHTML };
 
-},{"./compat":1}],8:[function(require,module,exports){
+},{"./compat":1,"./rev_prop_map":8}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

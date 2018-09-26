@@ -66,7 +66,7 @@ const htmlString = symplasm.stringify( jsObject )
 
 ## Options
 
-**Default Options**
+**Symplasm.parse Default Options**
 ```js
 {
   root: {
@@ -77,7 +77,8 @@ const htmlString = symplasm.stringify( jsObject )
   attrValueConvert: {},
   attrKeyAdd: {},
   trim: false,
-  lowerCaseTag: true
+  lowerCaseTag: true,
+  attrCamelCase: false,
 }
 ```
 
@@ -144,7 +145,7 @@ const htmlString = symplasm.stringify( jsObject )
       }
     ```
 
-* attrKeyConvert
+* attrValueConvert
 
   * Same as attrKeyConvert, but for the value
       * Select multiple elements by using a comma
@@ -187,3 +188,37 @@ const htmlString = symplasm.stringify( jsObject )
         }
       }
     ```
+
+* trim
+
+  * Removes all white space from text
+
+* lowerCaseTag
+
+  * Converts all dom node tags to lowercase
+  * I.E. Div => div  ||  IMG => img
+  
+* attrCamelCase
+
+  * Converts node properties to camelcase
+  * Based off [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
+
+
+**Symplasm.stringify Default Options**
+```js
+{
+  attrLowerCase: false,
+  styleAsCss: false
+}
+```
+
+* attrLowerCase
+
+  * Converts node properties to lowercase
+  * Does the reverse of [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
+
+* styleAsCss
+
+  * Converts JS CSS styles to Standard CSS
+  * Breaks the string at all uppercase letters, adds `-`, then lowercases the string
+  * I.E. marginTop:'20px' => margin-top: 20px

@@ -55,9 +55,9 @@ const setupSelectors = (selectorCheck, options) => {
     Object.keys(options[key]).map(attr => {
       // Get the attribute to be checked - i.e. class / id / name
       const attribute = options[key][attr]
-      
+
       // Get the element selectors,
-      let elementSelectors = attribute.selector
+      let elementSelectors = attribute && attribute.selector
       
       if(key !== 'tagConvert'){
         // If it's just a string set it, and return
@@ -70,14 +70,17 @@ const setupSelectors = (selectorCheck, options) => {
 
         // If there's no selectors, loop the attribute and add the keys 
         // to the elementSelector
-        if(!elementSelectors && Object.keys(attribute).length){
+        if(attribute && !elementSelectors && Object.keys(attribute).length){
           elementSelectors = {}
           Object.keys(attribute).map(key => {
             elementSelectors[key] = attribute[key]
           })
         }
 
-        if(!elementSelectors) return
+        if(!elementSelectors){
+          if(attribute === null) selectorCheck[key][attr] = null
+          return
+        }
         // Set the default for the selectorCheck items
         selectorCheck[key][attr] = selectorCheck[key][attr] || {}
       }
@@ -164,6 +167,7 @@ const setupSelectors = (selectorCheck, options) => {
       })
     })
   })
+
   return selectorCheck
 }
 

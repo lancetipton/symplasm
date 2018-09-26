@@ -1,9 +1,11 @@
+import propMap from './prop_map'
 import {
   addChildren,
   convertStyle,
   setupSelectors,
   unquote
 } from './helpers'
+
 
 let options = {
   root: {
@@ -13,6 +15,7 @@ let options = {
   attrKeyConvert: {},
   attrValueConvert: {},
   attrKeyAdd: {},
+  attrCamelCase: false,
   trim: false,
   lowerCaseTag: true,
   comments: true
@@ -53,6 +56,8 @@ const convertBlock = (block, nodes, children) => {
               children
             }, 'key')
           : key
+        
+        useKey = options.attrCamelCase && propMap[useKey] || useKey
 
         if(useKey && block[1][key]){
           attrs[useKey] = selectorCheck.attrValueConvert[key]
@@ -192,8 +197,10 @@ const formatAttributes = (args) => {
 
   Object.keys(attributes).map(item => {
     const parts = [ item, attributes[item]]
-
-    const key = selectorCheck.attrKeyConvert[parts[0]]
+    
+    if(selectorCheck.attrKeyConvert[parts[0]] === null) return
+    
+    let key = selectorCheck.attrKeyConvert[parts[0]]
       ? runAction({
           action: selectorCheck.attrKeyConvert[parts[0]],
           key: parts[0],
@@ -203,7 +210,9 @@ const formatAttributes = (args) => {
           children
         }, 'key')
       : parts[0]
-
+    
+    key = options.attrCamelCase && propMap[key] || key
+    
     const value = typeof parts[1] === 'string' || typeof parts[1] === 'object'
       ? formatValue({
           key: parts[0],
@@ -215,7 +224,7 @@ const formatAttributes = (args) => {
       : null
 
     if(key){
-      if(key === 'class' && value === '') attrs[key] = ''
+      if((key === 'className' || key === 'class') && value === '') attrs[key] = ''
       if(key === 'id' && !value) return
       attrs[key] = value || value === false
         ? value

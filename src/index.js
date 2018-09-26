@@ -26,7 +26,14 @@ export function parse (str) {
   return formatFS(nodes, options)
 }
 
-export function stringify (ast, options = parseDefaults) {
+export function stringify (ast) {
+  let options = parseDefaults
+  options.hasOpts = false
+  if(arguments[1]){
+    options = Object.assign(parseDefaults, arguments[1])
+    options.hasOpts = true
+  }
+
   return Array.isArray(ast)
     ? toHTML(ast, options)
     : toHTML([ast], options)

@@ -118,26 +118,10 @@
         <div>
           <label><b>HTML</b></label>
           <div class='pane pane-source'>
-
-<!-- 
-<select class="class-select" id="super-select" name="select-to-be-replaced" /></select>
-<button class="td-button" td-button="false" ></button>
-<div class="td-div" td-root ></div>
-<input id="td-first-input"  />
-<select class="class-select" id="super-select" name="select-to-be-replaced" >
-  <option value="1" >1</option>
-</select>
-<button class="td-button" td-button="false" ></button>
-<div class="td-div" td-root ></div>
-<input class="class-input" id="super-input" td-update-item name="input-to-be-replaced" />
-<input class="class-input" id="super-input" td-update-item name="input-to-be-replaced" />
-<select class="class-select" id="to-change-select-id" name="select-name" ></select>
-<select td-name="select-name" ></select>
- -->
-<!-- I am comment -->
-
             <textarea id='source' placeholder='<div>HTML to transform</div>'>
-<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" />
+<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" autoplay />
+<div contenteditable ><br><p>I no longer contenteditable</p></div>
+<div allowfullscreen ><br><p>allowfullscreen is cased properly</p></div>
             </textarea>
           </div>
         </div>
@@ -156,6 +140,13 @@
       
       <div class="display" >
         <div >
+          <label><b>Strig to HTML</b></label>
+          <div class='pane pane-source exported'>
+            <div id="string-html" ></div>
+          </div>
+          <br>
+          <br>
+          <br>
           <label><b>Converted to HTML</b></label>
           <div class='pane pane-source exported'>
             <div id="converted-html" ></div>
@@ -163,9 +154,16 @@
           <br>
           <br>
           <br>
-          <label><b>Settings</b></label>
+          <label><b>Parse Options</b></label>
           <div class='pane pane-output'>
             <pre id='settings'></pre>
+          </div>
+          <br>
+          <br>
+          <br>
+          <label><b>Stringify Options</b></label>
+          <div class='pane pane-output'>
+            <pre id='string-opts'></pre>
           </div>
         </div>
       </div>
@@ -188,6 +186,7 @@
       }
       
       var options = {
+        attrCamelCase: true,
         trim: true,
         lowerCaseTag: false,
         comments: false,
@@ -248,7 +247,7 @@
           }
         },
         attrKeyConvert: {
-          class: 'className',
+          contenteditable: null,
           id: {
             'input, select': function(element, key, value, allNodes, children, options){
               return 'td-changed'
@@ -285,14 +284,21 @@
           }
         }
       }
-
+      
+      var stringOpts = {
+        attrLowerCase: true,
+        styleAsCss: true
+      }
+      
       function updateOutput () {
         var html = $('#source').value || ''
         var code = symplasm.parse(html, options)
         $('#output').innerText = JSON.stringify(code, null, 2)
-        var htmlString = symplasm.stringify(code)
+        var htmlString = symplasm.stringify(code, stringOpts)
+        $('#string-html').textContent = htmlString
         $('#converted-html').innerHTML = htmlString
         $('#settings').innerText = JSON.stringify(options, null, 2)
+        $('#string-opts').innerText = JSON.stringify(stringOpts, null, 2)
       }
 
       $('#source').onkeyup = updateOutput
