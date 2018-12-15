@@ -1,0 +1,244 @@
+<html>
+  <head>
+    <title>Symplasm</title>
+    <link rel="stylesheet" type="text/css" href="./src/index.css">
+  </head>
+  
+<!-- 
+<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" autoplay />
+<div contenteditable ><br><p>I no longer contenteditable</p></div>
+<div allowfullscreen ><br><p>allowfullscreen is cased properly</p></div>
+  
+  
+  
+ -->
+
+
+  
+  <body>
+    <div class='page'>
+      <header>
+        <h1>Symplasm</h1>
+        <a href='https://github.com/lancetipton/symplasm'>Symplasm on Github</a>
+      </header>
+      <div class='description'>
+        <p>
+          Export JSON in vDom format.
+        </p>
+      </div>
+      <div class='converter'>
+        <div>
+          <label><b>HTML</b></label>
+          <div class='pane pane-source'>
+<!-- HTML Text to be parsed -->
+<textarea id='source' placeholder='<div>HTML to transform</div>'>
+<p>
+
+  This is first p text - p
+
+  <div>
+
+    This middle div text - p > div
+
+    <p>
+      This is last p text - p > div > p
+    </p>
+    <input>
+  </div>
+
+</p>
+</textarea>
+<!-- HTML Text to be parsed -->
+
+          </div>
+        </div>
+        <div>
+          <label><b>JSON Export</b></label>
+          <div class='pane pane-output'>
+            <pre id='output'></pre>
+          </div>
+        </div>
+      </div>
+
+      <br>
+      <br>
+      <br>
+      <br>
+      
+      <div class="display" >
+        <div >
+          <label><b>Strig to HTML</b></label>
+          <div class='pane pane-source exported'>
+            <div id="string-html" ></div>
+          </div>
+          <br>
+          <br>
+          <br>
+          <label><b>Converted to HTML</b></label>
+          <div class='pane pane-source exported'>
+            <div id="converted-html" ></div>
+          </div>
+          <br>
+          <br>
+          <br>
+          <label><b>Parse Options</b></label>
+          <div class='pane pane-output'>
+            <pre id='settings'></pre>
+          </div>
+          <br>
+          <br>
+          <br>
+          <label><b>Stringify Options</b></label>
+          <div class='pane pane-output'>
+            <pre id='string-opts'></pre>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+
+
+    <script src='./symplasm.js'></script>
+    <script>
+      var counter = 0
+      
+      var buttonClick = function(event){
+        console.log('------------------button click------------------');
+        console.log(event);
+      }
+      
+      function $ (selector) {
+        return document.querySelector(selector)
+      }
+      
+      var options = {
+        attrCamelCase: true,
+        trim: true,
+        lowerCaseTag: false,
+        comments: false,
+        root: {
+          0: 'article',
+          1: {
+            class: 'foo',
+            style: {
+              backgroundColor: 'red',
+              marginTop: '5px',
+            }
+          },
+          2: [{
+            0: 'div',
+            1: { class: 'added-child' },
+            2: 'Sub-Sub-Added Child'
+          }],
+        },
+        tagConvert: {
+          'p': (element, key, value, allNodes, children, options) => {
+            return 'div'
+          }
+          // input: {
+          //   0: 'input',
+          //   1: {
+          //     style: {
+          //       backgroundColor: 'green',
+          //       marginTop: '10px',
+          //     }
+          //   }
+          // },
+          // article: 'section',
+          // 'button.td-button': {
+          //   0: 'div',
+          //   1: {
+          //     class: 'td-button-reaplce-div',
+          //   },
+          //   2: [
+          //     {
+          //       0: 'div',
+          //       1: { class: 'sub-added-div' },
+          //       2: 'Button Text'
+          //     }
+          //   ]
+          // },
+          // 'input#td-first-input': function(element, key, value, allNodes, children, options){
+          //   return {
+          //     0: 'FSInput',
+          //     1: {
+          //       class: 'td-fd-inpu-input'
+          //     }
+          //   }
+          // },
+          // 'select[td-name="select-name"]': function(element, key, value, allNodes, children, options){
+          //   return {
+          //     0: 'TDSelect',
+          //     1: {
+          //       class: 'td-changed'
+          //     }
+          //   }
+          // }
+        },
+        attrKeyConvert: {
+          contenteditable: null,
+          id: {
+            'input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
+            },
+            'input#super-input': 'td-changed',
+          },
+          name: {
+            'input#super-input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
+            }
+          }
+        },
+        attrValueConvert: {
+          class: {
+            'button[td-button],div[td-root]': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
+            },
+          },
+          name: {
+            'input, select': function(element, key, value, allNodes, children, options){
+              return 'td-changed'
+            },
+            'select.class-select': 'td-direct-changed'
+          }
+        },
+        attrKeyAdd: {
+          'added-key-function': {
+            'select[td-name="select-name"]': function(element, key, value, allNodes, children, options){
+              return 'select-value'
+            },
+            'input[td-update-item]': function(element, key, value, allNodes, children, options){
+              return 'only-input-value'
+            },
+          }
+        },
+        allElements: (el, tree) => {
+            if(el[0] === 'input') el = { ...el, "0": 'div', 2: "No More Input" }
+            return el
+        }
+      }
+      
+      var stringOpts = {
+        attrLowerCase: true,
+        styleAsCss: true
+      }
+      
+      function updateOutput () {
+        var html = $('#source').value || ''
+        var code = symplasm.parse(html, options)
+        
+        $('#output').innerText = JSON.stringify(code, null, 2)
+        var htmlString = symplasm.stringify(code, stringOpts)
+        $('#string-html').textContent = htmlString
+        $('#converted-html').innerHTML = htmlString
+        $('#settings').innerText = JSON.stringify(options, null, 2)
+        $('#string-opts').innerText = JSON.stringify(stringOpts, null, 2)
+      }
+
+      $('#source').onkeyup = updateOutput
+      updateOutput()
+      ;</script>
+    
+  </body>
+</html>
