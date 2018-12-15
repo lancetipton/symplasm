@@ -1,15 +1,12 @@
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const webpack = require('webpack')
 
 const libraryName = 'symplasm'
 const ENV_MODE = process.env.ENV
-const outputFile = ENV_MODE === 'production'
-  ? libraryName + '.min.js'
-  : libraryName + '.js'
-
-
+const outputFile = libraryName + '.min.js'
 const paths = [ './build' ]
 
 module.exports = {
@@ -19,14 +16,15 @@ module.exports = {
     path: path.resolve(__dirname, './build'),
     filename: outputFile,
     library: libraryName,
-    libraryTarget: 'umd',
-    umdNamedDefine: true
   },
-  optimization: {
-    minimize: true,
+  module: {
+    rules: [
+      { enforce: 'pre', test: /\.(js|css)$/, loader: "remove-comments-loader" }
+    ]
   },
   plugins: [
     new CleanWebpackPlugin(paths, {}),
-    new HtmlWebpackPlugin({template: './src/index.html'})
+    new HtmlWebpackPlugin({template: './src/index.html'}),
+    new CopyWebpackPlugin([{ from: './src/index.css' }])
   ],
 };

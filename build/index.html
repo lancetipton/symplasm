@@ -1,20 +1,9 @@
 <html>
   <head>
     <title>Symplasm</title>
-    <link rel="stylesheet" type="text/css" href="./src/index.css">
+    <link rel="stylesheet" type="text/css" href="./index.css">
   </head>
-  
-<!-- 
-<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" autoplay />
-<div contenteditable ><br><p>I no longer contenteditable</p></div>
-<div allowfullscreen ><br><p>allowfullscreen is cased properly</p></div>
-  
-  
-  
- -->
 
-
-  
   <body>
     <div class='page'>
       <header>
@@ -32,21 +21,12 @@
           <div class='pane pane-source'>
 <!-- HTML Text to be parsed -->
 <textarea id='source' placeholder='<div>HTML to transform</div>'>
-<p>
 
-  This is first p text - p
 
-  <div>
+<input class="class-input" id="super-input" td-update-item="true" name="input-to-be-replaced" autoplay />
+<div contenteditable ><br><p>I no longer contenteditable</p></div>
+<div allowfullscreen ><br><p>allowfullscreen is cased properly</p></div>
 
-    This middle div text - p > div
-
-    <p>
-      This is last p text - p > div > p
-    </p>
-    <input>
-  </div>
-
-</p>
 </textarea>
 <!-- HTML Text to be parsed -->
 
@@ -99,7 +79,7 @@
 
 
 
-    <script src='./symplasm.js'></script>
+    <script src='./symplasm.min.js'></script>
     <script>
       var counter = 0
       
