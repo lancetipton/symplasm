@@ -1,7 +1,7 @@
 {
   "name": "symplasm",
   "description": "HTML to JSON parser",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "author": "Lance Tipton <ltipton@tiptondigital.com>",
   "bugs": {
     "url": "https://github.com/lancetipton/symplasm/issues"
@@ -24,6 +24,7 @@
   ],
   "license": "ISC",
   "main": "build/symplasm.js",
+  "module": "src/scripts/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/lancetipton/symplasm.git"
