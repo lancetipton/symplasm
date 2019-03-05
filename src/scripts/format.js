@@ -30,7 +30,7 @@ let selectorCheck = {
 let attrArrEmpty = true
 const domTagAction = '$$DOM_TAG_NAME'
 
-const convertBlock = (block, nodes, children, tree) => {
+const convertBlock = (block, parent, nodes, children, tree) => {
   const data = selectorCheck.tagConvert[block[0]]
     ? runAction({
         action: selectorCheck.tagConvert[block[0]],
@@ -82,23 +82,21 @@ const convertBlock = (block, nodes, children, tree) => {
   // If first child is an array, loop over each child
   if(block[2] &&  typeof block[2] !== 'string' && block[2].length){
     block[2] = block[2].map(child => {
-      return convertBlock(child, nodes, children, tree)
+      return convertBlock(child, block, nodes, children, tree)
     })
   }
 
-  return tree && allElementsCB(block, tree) || block
+  return tree && allElementsCB(block, parent, tree) || block
 }
 
-const buildBlock = (org, added, nodes, children) => {
+const buildBlock = (org, added, nodes, children, parent) => {
   org[0] = added[0]
   org[1] = { ...org[1], ...added[1] }
   if(added[2]) org[2] = added[2]
-  return convertBlock(org, nodes, children)
+  return convertBlock(org, parent, nodes, children)
 }
 
-const tagConvert = (args) => {
-  const { action, node, value, nodes, children } = args
-  let { block } = args
+const tagConvert = ({ action, node, value, nodes, children, parent, block }) => {
 
   const tagName = node[0]
   if(!tagName) return block
@@ -119,10 +117,10 @@ const tagConvert = (args) => {
     if(typeof data === 'string') data = { 0: data }
     
     if(typeof data === 'object')
-      block = buildBlock(block, data, nodes, children)
+      block = buildBlock(block, data, nodes, children, parent)
   }
   else if(typeof action === 'object' && !Array.isArray(action) && action[0]){
-    block = buildBlock(block, action, nodes, children)
+    block = buildBlock(block, action, nodes, children, parent)
   }
   else {
     const data = runAction({
@@ -135,7 +133,7 @@ const tagConvert = (args) => {
     }, 'value')
     if(typeof data === 'string') block[0] = data
     if(typeof data === 'object'){
-      block = buildBlock(block, data, nodes, children)
+      block = buildBlock(block, data, nodes, children, parent)
     }
   }
   return block
@@ -153,7 +151,8 @@ const format = ({ parent, childs, nodes, tree, ...args }) => {
             childs,
             nodes,
             children,
-            tree
+            tree,
+            parent
           })
         child && children.push(child)
         return children
@@ -161,7 +160,7 @@ const format = ({ parent, childs, nodes, tree, ...args }) => {
     : []
 }
 
-const formatNode = ({ node, nodes, children, tree }) => {
+const formatNode = ({ node, nodes, children, tree, parent }) => {
   // Check if the node needs to be converted
   // If it does, run the conversion
   // Otherwise set the default 
@@ -172,7 +171,8 @@ const formatNode = ({ node, nodes, children, tree }) => {
         value: node[0],
         node,
         nodes,
-        children
+        children,
+        parent
       })
     : { 0: node[0] }
 
@@ -201,6 +201,7 @@ const formatNode = ({ node, nodes, children, tree }) => {
         children
       })
     ),
+    parent,
     tree
   )
   
@@ -397,9 +398,9 @@ const filterFS = (node) => {
     : null
 }
 
-const allElementsCB = (block, tree) => {
+const allElementsCB = (block, parent, tree) => {
   return typeof options.allElements === 'function'
-    ? options.allElements(block, tree) || block
+    ? options.allElements(block, parent, tree) || block
     : block
 }
 
@@ -418,6 +419,7 @@ export const formatFS = (nodes, _options) => {
       node: rootFS,
       children: nodes,
       nodes,
+      rootFS,
     })
   }
 
@@ -430,7 +432,7 @@ export const formatFS = (nodes, _options) => {
 
   rootFS[2] = Array.isArray(rootFS[2])
   ? rootFS[2].map(child => {
-      return convertBlock(child, nodes, nodes, rootFS)
+      return convertBlock(child, rootFS, nodes, nodes, rootFS)
     })
   : []
 
@@ -440,5 +442,5 @@ export const formatFS = (nodes, _options) => {
     tree: rootFS,
   }))
 
-  return allElementsCB(builtRoot, builtRoot)
+  return allElementsCB(builtRoot, builtRoot, builtRoot)
 }

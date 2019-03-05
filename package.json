@@ -23,7 +23,7 @@
     "parser"
   ],
   "license": "ISC",
-  "main": "build/symplasm.js",
+  "main": "build/symplasm.min.js",
   "module": "src/scripts/index.js",
   "repository": {
     "type": "git",
