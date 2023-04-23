@@ -1,8 +1,8 @@
 {
-  "name": "symplasm",
+  "name": "@ltipton/symplasm",
   "description": "HTML to JSON parser",
-  "version": "0.0.0",
-  "author": "Lance Tipton <ltipton@tiptondigital.com>",
+  "version": "0.0.1",
+  "author": "Lance Tipton <ltipton04@gmail.com>",
   "bugs": {
     "url": "https://github.com/lancetipton/symplasm/issues"
   },
@@ -51,7 +51,7 @@
     "format:prettier": "prettier --config ./configs/prettier.config.js --ignore-path .eslintignore --write '**/*.{js,jsx}' .",
     "format": "pnpm format:prettier && pnpm format:eslint",
     "prepack": "pnpm json:rm",
-    "postpublish": "pnpm json:reset && docs:push",
+    "postpublish": "pnpm json:reset && pnpm docs:push",
     "test": "NODE_ENV=test jest --detectOpenHandles --no-cache --verbose --config=./configs/jest.config.js --maxWorkers=50%",
     "test:cov": "pnpm test:reports",
     "test:reports": "pnpm test --coverage && pnpm view:reports",
