@@ -51,7 +51,7 @@
     "format:prettier": "prettier --config ./configs/prettier.config.js --ignore-path .eslintignore --write '**/*.{js,jsx}' .",
     "format": "pnpm format:prettier && pnpm format:eslint",
     "prepack": "pnpm json:rm",
-    "postpublish": "pnpm json:reset && docs:push",
+    "postpublish": "pnpm json:reset && pnpm docs:push",
     "test": "NODE_ENV=test jest --detectOpenHandles --no-cache --verbose --config=./configs/jest.config.js --maxWorkers=50%",
     "test:cov": "pnpm test:reports",
     "test:reports": "pnpm test --coverage && pnpm view:reports",
