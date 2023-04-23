@@ -1,5 +1,5 @@
 {
-  "name": "symplasm",
+  "name": "@ltipton/symplasm",
   "description": "HTML to JSON parser",
   "version": "0.0.0",
   "author": "Lance Tipton <ltipton04@gmail.com>",
