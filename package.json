@@ -34,7 +34,7 @@
     "prebuild": "pnpm format && pnpm test",
     "build": "pnpm build:es && pnpm build:copy",
     "build:es": "node --enable-source-maps -r esbuild-register configs/build.config.ts",
-    "build:copy": "rimraf docs/symplasm && cp -R build/cjs docs/symplasm",
+    "build:copy": "rimraf docs/symplasm.js && cp -R build/cjs/index.js docs/symplasm.js",
     "clean": "pnpm clean:lock && pnpm cache clean && rimraf node_modules && npm cache clean --force",
     "clean:cache": "pnpm cache clean",
     "clean:lock": "rimraf ./pnpm.lock && rimraf ./package.lock",
