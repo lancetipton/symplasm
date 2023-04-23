@@ -147,13 +147,13 @@ const format = ({ parent, childs, nodes, tree, ...args }) => {
         const child = node.type === 'text' || node.type === 'comment'
           ? filterFS(node, parent)
           : formatNode({
-            node,
-            childs,
-            nodes,
-            children,
-            tree,
-            parent
-          })
+              node,
+              childs,
+              nodes,
+              children,
+              tree,
+              parent
+            })
         child && children.push(child)
         return children
       }, [])
@@ -431,10 +431,10 @@ export const formatFS = (nodes, _options) => {
   })
 
   rootFS[2] = Array.isArray(rootFS[2])
-  ? rootFS[2].map(child => {
-      return convertBlock(child, rootFS, nodes, nodes, rootFS)
-    })
-  : []
+    ? rootFS[2].map(child => {
+        return convertBlock(child, rootFS, nodes, nodes, rootFS)
+      })
+    : []
 
   const builtRoot = addChildren(rootFS, format({
     childs: nodes,

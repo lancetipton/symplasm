@@ -15,22 +15,23 @@ export const parseDefaults = {
   voidTags,
   closingTags,
   childlessTags,
+  hasOpts: false,
+  includePositions: false,
   closingTagAncestorBreakers,
-  includePositions: false
 }
 
-export function parse (str) {
-  let options = Object.assign(parseDefaults, arguments[1])
+export function parse (str:String) {
+  let options = Object.assign({...parseDefaults}, arguments[1])
   const tokens = lexer(str, options)
   const nodes = parser(tokens, options)
   return formatFS(nodes, options)
 }
 
-export function stringify (ast) {
-  let options = parseDefaults
+export function stringify (ast:Record<any, any>) {
+  let options = {...parseDefaults}
   options.hasOpts = false
   if(arguments[1]){
-    options = Object.assign(parseDefaults, arguments[1])
+    options = Object.assign({...parseDefaults}, arguments[1])
     options.hasOpts = true
   }
 
@@ -38,3 +39,10 @@ export function stringify (ast) {
     ? toHTML(ast, options)
     : toHTML([ast], options)
 }
+
+;(() => {
+  if(Boolean(typeof window !== 'undefined')){
+    // @ts-ignore
+    window.Symplasm = { parse, stringify, parseDefaults }
+  }
+})()

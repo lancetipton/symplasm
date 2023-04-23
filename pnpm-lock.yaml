@@ -45,6 +45,9 @@ devDependencies:
   esbuild-plugin-path-alias:
     specifier: 1.0.7
     version: 1.0.7(esbuild@0.17.18)
+  eslint:
+    specifier: ^8.39.0
+    version: 8.39.0
   get-all-files:
     specifier: 4.1.0
     version: 4.1.0
