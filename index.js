@@ -111,7 +111,7 @@ const init = () => {
  * We use an iif to ensure it's run when the browser is ready
  */
 window.addEventListener('load', async event => {
-  const mod = await import('/symplasm/index.js')
+  const mod = await import('/symplasm.js')
   $('#source').onkeyup = init
   init()
 })
