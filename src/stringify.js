@@ -1,12 +1,13 @@
-import { arrayIncludes } from './compat'
 import { revPropMap } from './prop_map'
+import { arrayIncludes } from './compat'
 
 const opts = {
+  styleAsCss: true,
+  selfClosing: true,
   attrLowerCase: false,
-  styleAsCss: false,
 }
 
-export const formatAttributes = (attributes, options) => {
+export const formatAttributes = (attributes, options = opts) => {
   let attrString = Object.keys(attributes).reduce((attrs, currentKey) => {
     let key = currentKey
     if (options.hasOpts && options.attrLowerCase && revPropMap[currentKey])
@@ -14,22 +15,26 @@ export const formatAttributes = (attributes, options) => {
 
     let value = attributes[currentKey]
     if (!value) return `${attrs} ${key}`
+    // if (!value && (value === undefined || value === null)) return `${attrs} ${key}`
     else if (key === 'style' && typeof value === 'object') {
       let styles = ''
+      const noCss = options.styleAsCss === false
       Object.keys(value).map(_name => {
-        let name = _name
-        if (options.hasOpts && options.styleAsCss)
-          name = _name
+        const name = noCss
+          ? _name
+          : _name
             .split(/(?=[A-Z])/)
             .join('-')
             .toLowerCase()
 
-        styles += `${name}:${value[_name]};`
+        styles += `${name}: ${value[_name]}; `
       })
+
       const quoteEscape = styles.indexOf("'") !== -1
       const quote = quoteEscape ? '"' : "'"
-      return `${attrs} ${key}=${quote}${styles}${quote}`
+      return `${attrs} ${key}=${quote}${styles.trim()}${quote}`
     }
+
     if (typeof value === 'boolean') value = `${value}`
 
     if (typeof value === 'string') {
@@ -44,20 +49,26 @@ export const formatAttributes = (attributes, options) => {
   return attrString.length ? ' ' + attrString : ''
 }
 
-const buildTag = (tagName, attributes, children, options) => {
+const buildTag = (tagName, attributes, children, options = opts) => {
   return `<${tagName}${formatAttributes(attributes, options)}>${
     toHTML(children, options) || ''
   }</${tagName}>`
 }
 
-const buildSelfCloseTag = (tagName, attributes, options) => {
+const buildSelfCloseTag = (tagName, attributes, options = opts) => {
   let formatted = formatAttributes(attributes, options)
   formatted = formatted.length ? formatted + ' ' : formatted
-  return `<${tagName}${formatted}${'/'}>`
+  const inCloseArr =
+    Array.isArray(options.selfClosing) && !options.selfClosing.includes(tagName)
+  const end = options.selfClosing !== false && !inCloseArr ? `/` : ``
+
+  const full = `${tagName}${formatted}${end}`.trim()
+
+  return `<${full}>`
 }
 
 export function toHTML(tree, _options) {
-  const options = Object.assign({...opts}, _options)
+  const options = Object.assign({ ...opts }, _options)
 
   if (typeof tree === 'string') return tree
   return (

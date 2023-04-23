@@ -1,41 +1,39 @@
 import { propMap } from './prop_map'
+import { deepMerge, emptyObj } from '@keg-hub/jsutils'
 import { addChildren, convertStyle, setupSelectors, unquote } from './helpers'
 
-let options = {
-  root: {
-    0: 'div',
-  },
+const defRoot = { 0: 'div' }
+
+const opts = {
+  trim: false,
+  root: undefined,
+  attrKeyAdd: {},
   tagConvert: {},
+  comments: true,
+  parseInt: false,
+  parseBoolean: true,
+  lowerCaseTag: true,
   attrKeyConvert: {},
   attrValueConvert: {},
-  attrKeyAdd: {},
   attrCamelCase: false,
-  trim: false,
-  lowerCaseTag: true,
-  comments: true,
+  attrArrEmpty: undefined,
 }
 
-let selectorCheck = {
-  tagConvert: {},
-  attrKeyConvert: {},
-  attrValueConvert: {},
-  attrKeyAdd: {},
-}
-let attrArrEmpty = true
 const domTagAction = '$$DOM_TAG_NAME'
 
-const convertBlock = (block, parent, nodes, children, tree) => {
-  const data = selectorCheck.tagConvert[block[0]]
+const convertBlock = (block, parent, nodes, children, tree, options) => {
+  const data = options.selectorCheck.tagConvert[block[0]]
     ? runAction(
       {
-        action: selectorCheck.tagConvert[block[0]],
+        action: options.selectorCheck.tagConvert[block[0]],
         node: block,
         key: domTagAction,
         value: block[0],
         nodes,
         children,
       },
-      'value'
+      'value',
+      options
     )
     : block[0]
   if (typeof data === 'string') block[0] = data
@@ -45,34 +43,36 @@ const convertBlock = (block, parent, nodes, children, tree) => {
   block[1] =
     typeof block[1] === 'object'
       ? Object.keys(block[1]).reduce((attrs, key) => {
-        let useKey = selectorCheck.attrKeyConvert[key]
+        let useKey = options.selectorCheck.attrKeyConvert[key]
           ? runAction(
             {
-              action: selectorCheck.attrKeyConvert[key],
+              action: options.selectorCheck.attrKeyConvert[key],
               node: block,
               value: block[1][key],
               key,
               nodes,
               children,
             },
-            'key'
+            'key',
+            options
           )
           : key
 
         useKey = (options.attrCamelCase && propMap[useKey]) || useKey
 
         if (useKey && block[1][key]) {
-          attrs[useKey] = selectorCheck.attrValueConvert[key]
+          attrs[useKey] = options.selectorCheck.attrValueConvert[key]
             ? runAction(
               {
-                action: selectorCheck.attrValueConvert[key],
+                action: options.selectorCheck.attrValueConvert[key],
                 node: block,
                 value: block[1][key],
                 key,
                 nodes,
                 children,
               },
-              'value'
+              'value',
+              options
             )
             : typeof block[1][key] === 'string'
               ? unquote(block[1][key])
@@ -84,35 +84,31 @@ const convertBlock = (block, parent, nodes, children, tree) => {
       : {}
 
   // If first child is an array, loop over each child
-  if (block[2] && typeof block[2] !== 'string' && block[2].length) {
-    block[2] = block[2].map(child => {
-      return convertBlock(child, block, nodes, children, tree)
-    })
-  }
+  if (block[2] && typeof block[2] !== 'string' && block[2].length)
+    block[2] = block[2].map(child =>
+      convertBlock(child, block, nodes, children, tree, options)
+    )
 
-  return (tree && allElementsCB(block, parent, tree)) || block
+  return (tree && allElementsCB(block, parent, tree, options)) || block
 }
 
-const buildBlock = (org, added, nodes, children, parent) => {
+const buildBlock = (org, added, nodes, children, parent, options) => {
   org[0] = added[0]
   org[1] = { ...org[1], ...added[1] }
   if (added[2]) org[2] = added[2]
-  return convertBlock(org, parent, nodes, children)
+
+  return convertBlock(org, parent, nodes, children, undefined, options)
 }
 
-const tagConvert = ({
-  action,
-  node,
-  value,
-  nodes,
-  children,
-  parent,
-  block,
-}) => {
+const tagConvert = (args, options) => {
+  let block = args.block
+  const { node, nodes, parent, action, children } = args
+
   const tagName = node[0]
   if (!tagName) return block
   block[0] = options.lowerCaseTag ? tagName.toLowerCase() : tagName
 
+  // Handle action method
   if (typeof action === 'function') {
     let data = runAction(
       {
@@ -123,21 +119,23 @@ const tagConvert = ({
         nodes,
         children,
       },
-      'value'
+      'value',
+      options
     )
+
     if (!data) return block
     if (typeof data === 'string') data = { 0: data }
 
     if (typeof data === 'object')
-      block = buildBlock(block, data, nodes, children, parent)
+      block = buildBlock(block, data, nodes, children, parent, options)
   }
-  else if (
-    typeof action === 'object' &&
-    !Array.isArray(action) &&
-    action[0]
-  ) {
-    block = buildBlock(block, action, nodes, children, parent)
+
+  // Handle action object or array of objects
+  else if (typeof action === 'object' && !Array.isArray(action) && action[0]) {
+    block = buildBlock(block, action, nodes, children, parent, options)
   }
+
+  // Handle default action for data
   else {
     const data = runAction(
       {
@@ -148,61 +146,77 @@ const tagConvert = ({
         nodes,
         children,
       },
-      'value'
+      'value',
+      options
     )
+
     if (typeof data === 'string') block[0] = data
-    if (typeof data === 'object') {
-      block = buildBlock(block, data, nodes, children, parent)
-    }
+
+    if (typeof data === 'object')
+      block = buildBlock(block, data, nodes, children, parent, options)
   }
   return block
 }
 
 // ----------- Formatters ----------- //
-const format = ({ parent, childs, nodes, tree, ...args }) => {
+const format = (args, options) => {
+  let nodes = args.nodes
+  const { tree, parent, childs } = args
+
   return childs
     ? childs.reduce((children, node) => {
       nodes = nodes || childs
       const child =
           node.type === 'text' || node.type === 'comment'
-            ? filterFS(node, parent)
-            : formatNode({
-              node,
-              childs,
-              nodes,
-              children,
-              tree,
-              parent,
-            })
+            ? filterFS(node, options)
+            : formatNode(
+              {
+                node,
+                childs,
+                nodes,
+                children,
+                tree,
+                parent,
+              },
+              options
+            )
       child && children.push(child)
       return children
     }, [])
     : []
 }
 
-const formatNode = ({ node, nodes, children, tree, parent }) => {
+const formatNode = (args, options) => {
+  const { node, tree, nodes, parent, children } = args
+
   // Check if the node needs to be converted
   // If it does, run the conversion
   // Otherwise set the default
-  const block = selectorCheck.tagConvert[node[0]]
-    ? tagConvert({
-      action: selectorCheck.tagConvert[node[0]],
-      block: {},
-      value: node[0],
-      node,
-      nodes,
-      children,
-      parent,
-    })
+  const block = options.selectorCheck.tagConvert[node[0]]
+    ? tagConvert(
+      {
+        action: options.selectorCheck.tagConvert[node[0]],
+        block: {},
+        value: node[0],
+        node,
+        nodes,
+        children,
+        parent,
+      },
+      options
+    )
     : { 0: node[0] }
 
   // Build any of the current attrs
-  const attrs = formatAttributes({
-    attributes: node[1],
-    node,
-    nodes,
-    children,
-  })
+  const attrs = formatAttributes(
+    {
+      attributes: node[1],
+      node,
+      nodes,
+      children,
+    },
+    options
+  )
 
   // current attr data get merge after the data from the node
   // This is because the only way the block will have attrs is if it was tagConverted
@@ -213,41 +227,45 @@ const formatNode = ({ node, nodes, children, tree, parent }) => {
     addChildren(
       block,
       // Format the children before adding to the block
-      format({
-        tree,
-        childs: node[2],
-        parent: block,
-        nodes,
-        children,
-      })
+      format(
+        {
+          tree,
+          childs: node[2],
+          parent: block,
+          nodes,
+          children,
+        },
+        options
+      )
     ),
     parent,
-    tree
+    tree,
+    options
   )
 }
 
-const formatAttributes = args => {
-  const { node, nodes, children } = args
-  let { attributes } = args
-  attributes = attributes || {}
+const formatAttributes = (args, options) => {
+  const { node, nodes, children, attributes = {} } = args
+
   const attrs = {}
 
   Object.keys(attributes).map(item => {
     const parts = [ item, attributes[item] ]
 
-    if (selectorCheck.attrKeyConvert[parts[0]] === null) return
+    if (options.selectorCheck.attrKeyConvert[parts[0]] === null) return
 
-    let key = selectorCheck.attrKeyConvert[parts[0]]
+    let key = options.selectorCheck.attrKeyConvert[parts[0]]
       ? runAction(
         {
-          action: selectorCheck.attrKeyConvert[parts[0]],
+          action: options.selectorCheck.attrKeyConvert[parts[0]],
           key: parts[0],
           value: parts[1],
           node,
           nodes,
           children,
         },
-        'key'
+        'key',
+        options
       )
       : parts[0]
 
@@ -255,60 +273,80 @@ const formatAttributes = args => {
 
     const value =
       typeof parts[1] === 'string' || typeof parts[1] === 'object'
-        ? formatValue({
-          key: parts[0],
-          value: parts[1],
-          node,
-          nodes,
-          children,
-        })
+        ? formatValue(
+          {
+            key: parts[0],
+            value: parts[1],
+            node,
+            nodes,
+            children,
+          },
+          options
+        )
         : null
 
     if (key) {
       if ((key === 'className' || key === 'class') && value === '')
         attrs[key] = ''
+
       if (key === 'id' && !value) return
+
       attrs[key] = value || value === false ? value : true
     }
   })
 
-  if (attrArrEmpty) return attrs
-
-  return addAttribute({
-    node,
-    attrs,
-    nodes,
-    children,
-  })
+  return options.attrArrEmpty
+    ? attrs
+    : addAttribute(
+      {
+        node,
+        attrs,
+        nodes,
+        children,
+      },
+      options
+    )
 }
 
-const formatValue = args => {
+const formatValue = (args, options) => {
   const { node, key, value, nodes, children } = args
+
   const updatedVal =
     key === 'style' && typeof value === 'string'
       ? convertStyle(unquote(value))
-      : selectorCheck.attrValueConvert[key]
+      : options.selectorCheck.attrValueConvert[key]
         ? runAction(
           {
-            action: selectorCheck.attrValueConvert[key],
+            action: options.selectorCheck.attrValueConvert[key],
             value: unquote(value),
             node,
             key,
             nodes,
             children,
           },
-          'value'
+          'value',
+          options
         )
         : (typeof value === 'string' && unquote(value)) || value
 
-  if (updatedVal === 'true') return true
-  if (updatedVal === 'false') return false
+  const trimmed = updatedVal?.trim?.()
+
+  if (options.parseBoolean) {
+    if (trimmed === `true`) return true
+    if (trimmed === `false`) return false
+  }
+
+  if (options.parseInt) {
+    const asInt = parseInt(trimmed)
+    if (`${asInt}` === trimmed) return asInt
+  }
+
   return updatedVal
 }
 
 // ----------- Run options methods ----------- //
-const runAction = (args, def) => {
-  const { action, node, key, value, nodes, children } = args
+const runAction = (args, def, options) => {
+  const { key, node, value, nodes, action, children } = args
 
   switch (typeof action) {
   case 'string':
@@ -407,15 +445,21 @@ const runAction = (args, def) => {
 }
 
 // ----------- Helpers ----------- //
-const addAttribute = ({ node, attrs, nodes, children }) => {
-  Object.keys(selectorCheck.attrKeyAdd).map(key => {
-    const value = runAction({
-      action: selectorCheck.attrKeyAdd[key],
-      key,
-      node,
-      nodes,
-      children,
-    })
+const addAttribute = (args, options) => {
+  const { node, attrs, nodes, children } = args
+
+  Object.keys(options.selectorCheck.attrKeyAdd).map(key => {
+    const value = runAction(
+      {
+        key,
+        node,
+        nodes,
+        children,
+        action: options.selectorCheck.attrKeyAdd[key],
+      },
+      undefined,
+      options
+    )
 
     if (value) attrs[key] = value
   })
@@ -423,7 +467,7 @@ const addAttribute = ({ node, attrs, nodes, children }) => {
   return attrs
 }
 
-const filterFS = node => {
+const filterFS = (node, options) => {
   let start = ''
   let end = ''
   let text = node.content
@@ -442,52 +486,62 @@ const filterFS = node => {
   return text ? start + text + end : null
 }
 
-const allElementsCB = (block, parent, tree) => {
+const allElementsCB = (block, parent, tree, options) => {
   return typeof options.allElements === 'function'
     ? options.allElements(block, parent, tree) || block
     : block
 }
 
-export const formatFS = (nodes, _options) => {
-  let rootFS = { ...options.root, ..._options.root }
-  options = { ...options, ..._options }
+export const formatFS = (nodes, _options = emptyObj) => {
+  const { root, ...rest } = _options
 
-  selectorCheck = setupSelectors(selectorCheck, options)
-  attrArrEmpty = Object.keys(options.attrKeyAdd).length === 0
+  let rootFS = deepMerge({}, defRoot, root)
+  const options = deepMerge({}, opts, rest)
 
-  if (selectorCheck.tagConvert[rootFS[0]]) {
-    rootFS = tagConvert({
-      action: selectorCheck.tagConvert[rootFS[0]],
-      block: rootFS,
-      value: rootFS[0],
+  options.selectorCheck = setupSelectors(options)
+  options.attrArrEmpty = Object.keys(options.attrKeyAdd).length === 0
+
+  if (options.selectorCheck.tagConvert[rootFS[0]])
+    rootFS = tagConvert(
+      {
+        nodes,
+        rootFS,
+        node: rootFS,
+        block: rootFS,
+        children: nodes,
+        value: rootFS[0],
+        action: options.selectorCheck.tagConvert[rootFS[0]],
+      },
+      options
+    )
+
+  rootFS[1] = formatAttributes(
+    {
+      nodes,
       node: rootFS,
       children: nodes,
-      nodes,
-      rootFS,
-    })
-  }
-
-  rootFS[1] = formatAttributes({
-    attributes: rootFS[1],
-    node: rootFS,
-    children: nodes,
-    nodes,
-  })
+      attributes: rootFS[1],
+    },
+    options
+  )
 
   rootFS[2] = Array.isArray(rootFS[2])
-    ? rootFS[2].map(child => {
-      return convertBlock(child, rootFS, nodes, nodes, rootFS)
-    })
+    ? rootFS[2].map(child =>
+      convertBlock(child, rootFS, nodes, nodes, rootFS, options)
+    )
     : []
 
   const builtRoot = addChildren(
     rootFS,
-    format({
-      childs: nodes,
-      parent: rootFS,
-      tree: rootFS,
-    })
+    format(
+      {
+        tree: rootFS,
+        childs: nodes,
+        parent: rootFS,
+      },
+      options
+    )
   )
 
-  return allElementsCB(builtRoot, builtRoot, builtRoot)
+  return allElementsCB(builtRoot, builtRoot, builtRoot, options)
 }

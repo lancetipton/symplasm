@@ -46,7 +46,7 @@ export const closingTagAncestorBreakers = {
 
 /*
   Tags which do not need the closing tag
-  For example: <img> does not need </img>
+  For example: <img /> does not need </img>
 */
 export const voidTags = [
   '!doctype',

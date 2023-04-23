@@ -1,5 +1,3 @@
-import { t } from '../__mocks__'
-
 import lexer, {
   lexText,
   lexComment,
@@ -20,7 +18,7 @@ describe(`lexer`, () => {
     const str = '<h1>Test case</h1>'
     const options = { childlessTags: [] }
     const tokens = lexer(str, options)
-    t.deepEqual(tokens, [
+    expect(tokens).toEqual([
       { type: 'tag-start', close: false, position: { start: ps(0) } },
       { type: 'tag', content: 'h1' },
       { type: 'tag-end', close: false, position: { end: ps(4) } },
@@ -40,7 +38,7 @@ describe(`lexer`, () => {
       const str = '2 <= 4 >'
       const options = { childlessTags: [] }
       const tokens = lexer(str, options)
-      t.deepEqual(tokens, [
+      expect(tokens).toEqual([
         {
           type: 'text',
           content: '2 <= 4 >',
@@ -53,7 +51,7 @@ describe(`lexer`, () => {
       const str = '2 <a 4 >'
       const options = { childlessTags: [] }
       const tokens = lexer(str, options)
-      t.deepEqual(tokens, [
+      expect(tokens).toEqual([
         { type: 'text', content: '2 ', position: { start: ps(0), end: ps(2) } },
         { type: 'tag-start', close: false, position: { start: ps(2) } },
         { type: 'tag', content: 'a' },
@@ -67,7 +65,7 @@ describe(`lexer`, () => {
     const str = '<template>Hello <img/></template>'
     const options = { childlessTags: ['template'] }
     const tokens = lexer(str, options)
-    t.deepEqual(tokens, [
+    expect(tokens).toEqual([
       { type: 'tag-start', close: false, position: { start: ps(0) } },
       { type: 'tag', content: 'template' },
       { type: 'tag-end', close: false, position: { end: ps(10) } },
@@ -83,10 +81,10 @@ describe(`lexer`, () => {
   })
 
   test('findTextEnd should find the end of the text segment', () => {
-    t.is(findTextEnd('</end', 0), 0)
-    t.is(findTextEnd('<= 4', 0), -1)
-    t.is(findTextEnd('a<b', 0), 1)
-    t.is(findTextEnd('<= <= <=', 0), -1)
+    expect(findTextEnd('</end', 0)).toBe(0)
+    expect(findTextEnd('<= 4', 0)).toBe(-1)
+    expect(findTextEnd('a<b', 0)).toBe(1)
+    expect(findTextEnd('<= <= <=', 0)).toBe(-1)
   })
 
   test('lexText should tokenize the next text segment', () => {
@@ -96,9 +94,9 @@ describe(`lexer`, () => {
     const state = { str, position: ps(0), tokens: [] }
     lexText(state)
 
-    t.is(state.position.index, finish)
+    expect(state.position.index).toBe(finish)
     const token = state.tokens[0]
-    t.deepEqual(token, {
+    expect(token).toEqual({
       type: 'text',
       content: 'text that ends',
       position: {
@@ -115,9 +113,9 @@ describe(`lexer`, () => {
     const state = { str, position: ps(4), tokens: [] }
     lexText(state)
 
-    t.is(state.position.index, finish)
+    expect(state.position.index).toBe(finish)
     const token = state.tokens[0]
-    t.deepEqual(token, {
+    expect(token).toEqual({
       type: 'text',
       content: 'text that ends',
       position: {
@@ -134,9 +132,9 @@ describe(`lexer`, () => {
     const state = { str, position: ps(0), tokens: [] }
     lexText(state)
 
-    t.is(state.position.index, finish)
+    expect(state.position.index).toBe(finish)
     const token = state.tokens[0]
-    t.deepEqual(token, {
+    expect(token).toEqual({
       type: 'text',
       content: 'text that does not end',
       position: {
@@ -154,8 +152,8 @@ describe(`lexer`, () => {
     const state = { str, position: ps(start), tokens: [] }
     lexText(state)
 
-    t.is(state.position.index, finish)
-    t.is(state.tokens.length, 0)
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens.length).toBe(0)
   })
 
   test('lexComment should tokenize the next comment', () => {
@@ -164,8 +162,8 @@ describe(`lexer`, () => {
     const state = { str, position: ps(0), tokens: [] }
     lexComment(state)
 
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens[0]).toEqual({
       type: 'comment',
       content: ' this is a comment ',
       position: {
@@ -181,8 +179,8 @@ describe(`lexer`, () => {
     const state = { str, position: ps(0), tokens: [] }
     lexComment(state)
 
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens[0]).toEqual({
       type: 'comment',
       content: ' this is a comment',
       position: {
@@ -198,8 +196,8 @@ describe(`lexer`, () => {
     const state = { str, position: ps(4), tokens: [] }
     lexComment(state)
 
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens[0]).toEqual({
       type: 'comment',
       content: ' comment text ',
       position: {
@@ -214,8 +212,8 @@ describe(`lexer`, () => {
     const finish = str.length
     const state = { str, position: ps(0), tokens: [] }
     lexComment(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens[0]).toEqual({
       type: 'comment',
       content: '',
       position: {
@@ -230,8 +228,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTag(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       { type: 'tag-start', close: false, position: { start: ps(0) } },
       { type: 'tag', content: 'img' }, // not a part of this test
       { type: 'tag-end', close: true, position: { end: ps(finish) } },
@@ -243,8 +241,8 @@ describe(`lexer`, () => {
     const finish = 2
     const state = { str, position: ps(0), tokens: [] }
     lexTagName(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens[0]).toEqual({
       type: 'tag',
       content: 'h1',
     })
@@ -254,8 +252,8 @@ describe(`lexer`, () => {
     const str = '>/ div'
     const state = { str, position: ps(0), tokens: [] }
     lexTagName(state)
-    t.is(state.position.index, str.length)
-    t.deepEqual(state.tokens[0], {
+    expect(state.position.index).toBe(str.length)
+    expect(state.tokens[0]).toEqual({
       type: 'tag',
       content: 'div',
     })
@@ -266,8 +264,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('>abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'yes="no"' },
       { type: 'attribute', content: 'maybe' },
       { type: 'attribute', content: 'data-type="array"' },
@@ -279,8 +277,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('>abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'yes="no"' },
       { type: 'attribute', content: 'maybe' },
       { type: 'attribute', content: 'data-type="array"' },
@@ -292,8 +290,8 @@ describe(`lexer`, () => {
     const str = '<div foo= bar="baz"></div>'
     const state = { str, position: ps(4), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, str.indexOf('></div>'))
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.indexOf('></div>'))
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'foo' },
       { type: 'attribute', content: 'bar="baz"' },
     ])
@@ -303,8 +301,8 @@ describe(`lexer`, () => {
     const str = '<div foo="bar"\nbaz="bat"></div>'
     const state = { str, position: ps(4), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, str.indexOf('></div>'))
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.indexOf('></div>'))
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'foo="bar"' },
       { type: 'attribute', content: 'baz="bat"' },
     ])
@@ -314,8 +312,8 @@ describe(`lexer`, () => {
     const str = '<div foo="bar"\tbaz="bat"></div>'
     const state = { str, position: ps(4), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, str.indexOf('></div>'))
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.indexOf('></div>'))
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'foo="bar"' },
       { type: 'attribute', content: 'baz="bat"' },
     ])
@@ -326,8 +324,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('>abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [{ type: 'attribute', content: 'yes="no"' }])
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([{ type: 'attribute', content: 'yes="no"' }])
   })
 
   test('lexTagAttributes should handle unquoted one-word values', () => {
@@ -335,8 +333,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('>abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       { type: 'attribute', content: 'num=8' },
       { type: 'attribute', content: 'ham=steak' },
     ])
@@ -347,8 +345,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('>abcd')
     const state = { str, position: ps(0), tokens: [] }
     lexTagAttributes(state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [{ type: 'attribute', content: 'x' }])
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([{ type: 'attribute', content: 'x' }])
   })
 
   test('lexSkipTag should tokenize as text until the matching tag name', () => {
@@ -356,8 +354,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('<x>')
     const state = { str, position: ps(10), tokens: [] }
     lexSkipTag('test', state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       {
         type: 'text',
         content: '<h1>Test case</h1>',
@@ -374,8 +372,8 @@ describe(`lexer`, () => {
     const finish = str.indexOf('<x>')
     const state = { str, position: ps(6), tokens: [] }
     lexSkipTag('tEsT', state)
-    t.is(state.position.index, finish)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(finish)
+    expect(state.tokens).toEqual([
       {
         type: 'text',
         content: 'proving <???> the point',
@@ -391,8 +389,8 @@ describe(`lexer`, () => {
     const str = '<script>This never ends'
     const state = { str, position: ps(8), tokens: [] }
     lexSkipTag('script', state)
-    t.is(state.position.index, str.length)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.length)
+    expect(state.tokens).toEqual([
       {
         type: 'text',
         content: 'This never ends',
@@ -405,8 +403,8 @@ describe(`lexer`, () => {
     const str = '<script>proving </nothing></script>'
     const state = { str, position: ps(8), tokens: [] }
     lexSkipTag('script', state)
-    t.is(state.position.index, str.length)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.length)
+    expect(state.tokens).toEqual([
       {
         type: 'text',
         content: 'proving </nothing>',
@@ -422,8 +420,8 @@ describe(`lexer`, () => {
     const str = '<script></script>'
     const state = { str, position: ps(8), tokens: [] }
     lexSkipTag('script', state)
-    t.is(state.position.index, str.length)
-    t.deepEqual(state.tokens, [
+    expect(state.position.index).toBe(str.length)
+    expect(state.tokens).toEqual([
       { type: 'tag-start', close: true, position: { start: ps(8) } },
       { type: 'tag', content: 'script' },
       { type: 'tag-end', close: false, position: { end: ps(str.length) } },
@@ -431,9 +429,9 @@ describe(`lexer`, () => {
   })
 
   test('isWhitespace should work', () => {
-    t.is(isWhitespaceChar(' '), true)
-    t.is(isWhitespaceChar('\n'), true)
-    t.is(isWhitespaceChar('\t'), true)
-    t.is(isWhitespaceChar('x'), false)
+    expect(isWhitespaceChar(' ')).toBe(true)
+    expect(isWhitespaceChar('\n')).toBe(true)
+    expect(isWhitespaceChar('\t')).toBe(true)
+    expect(isWhitespaceChar('x')).toBe(false)
   })
 })

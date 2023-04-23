@@ -19,18 +19,18 @@ export const parseDefaults = {
   closingTagAncestorBreakers,
 }
 
-export function parse(str: String) {
-  let options = Object.assign({ ...parseDefaults }, arguments[1])
+export function parse(str: String, opts?: Record<any, any>) {
+  let options = Object.assign({ ...parseDefaults }, opts)
   const tokens = lexer(str, options)
   const nodes = parser(tokens, options)
   return formatFS(nodes, options)
 }
 
-export function stringify(ast: Record<any, any>) {
+export function stringify(ast: Record<any, any>, opts?: Record<any, any>) {
   let options = { ...parseDefaults }
   options.hasOpts = false
-  if (arguments[1]) {
-    options = Object.assign({ ...parseDefaults }, arguments[1])
+  if (opts) {
+    options = Object.assign({ ...parseDefaults }, opts)
     options.hasOpts = true
   }
 

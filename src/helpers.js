@@ -1,8 +1,21 @@
+import { deepMerge } from '@keg-hub/jsutils'
+
 const selectTypes = [
   [ 'class', '.' ],
   [ 'id', '#' ],
   [ 'data', '[' ],
 ]
+
+const selectorCheck = {
+  tagConvert: {},
+  attrKeyAdd: {},
+  attrKeyConvert: {},
+  attrValueConvert: {},
+}
+
+const clean = str => {
+  return (str && unquote(str.trim()).trim()) || ''
+}
 
 const buildElSelectors = (selCheck, selAttr, key, attr) => {
   // Get the element selectors,
@@ -81,13 +94,16 @@ const findSelector = (hasSelectors, elSelectors, select, props, tag) => {
   return el
 }
 
-const setupSelectors = (selCheck, options) => {
+export const setupSelectors = options => {
+  const selCheck = deepMerge(selectorCheck)
   const selectorArr = Object.keys(selCheck)
+
   Object.keys(options).map(key => {
     // Only check keys from the selector Array
     if (selectorArr.indexOf(key) === -1) return
 
     const props = {}
+
     Object.keys(options[key]).map(attr => {
       // Get the attribute to be checked - i.e. class / id / name
       const attribute = options[key][attr]
@@ -142,7 +158,7 @@ const setupSelectors = (selCheck, options) => {
   return selCheck
 }
 
-const addChildren = (block, childs) => {
+export const addChildren = (block, childs) => {
   const addChilds =
     childs.length === 1 && typeof childs[0] === 'string'
       ? childs[0]
@@ -156,7 +172,7 @@ const addChildren = (block, childs) => {
   return block
 }
 
-const convertCase = text => {
+export const convertCase = text => {
   let converted = ''
   const text_split = text.split('-')
   if (!text_split.length) return text
@@ -167,7 +183,7 @@ const convertCase = text => {
   return converted
 }
 
-const convertStyle = styles => {
+export const convertStyle = styles => {
   const valObj = {}
   const val_split = styles.trim().split(';')
 
@@ -187,31 +203,16 @@ const convertStyle = styles => {
   return valObj
 }
 
-const splitKeyValue = (str, sep) => {
+export const splitKeyValue = (str, sep) => {
   const idx = str.indexOf(sep)
   if (idx === -1) return [str]
   return [ str.slice(0, idx), str.slice(idx + sep.length) ]
 }
 
-const clean = str => {
-  return (str && unquote(str.trim()).trim()) || ''
-}
-
-const unquote = str => {
+export const unquote = str => {
   const car = str.charAt(0)
   const end = str.length - 1
   const isQuoteStart = car === '"' || car === "'"
-  if (isQuoteStart && car === str.charAt(end)) {
-    return str.slice(1, end)
-  }
-  return str
-}
 
-export {
-  addChildren,
-  convertCase,
-  convertStyle,
-  setupSelectors,
-  splitKeyValue,
-  unquote,
+  return isQuoteStart && car === str.charAt(end) ? str.slice(1, end) : str
 }

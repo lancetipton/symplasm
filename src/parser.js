@@ -33,8 +33,10 @@ export function parse(state) {
   let nodes = stack[stack.length - 1].children
   const len = tokens.length
   let { cursor } = state
+
   while (cursor < len) {
     const token = tokens[cursor]
+
     if (token.type !== 'tag-start') {
       nodes.push(token)
       cursor++
@@ -91,6 +93,7 @@ export function parse(state) {
 
     let attributes = []
     let attrToken
+
     while (cursor < len) {
       attrToken = tokens[cursor]
       if (attrToken.type === 'tag-end') break
@@ -119,6 +122,7 @@ export function parse(state) {
     const hasChildren = !(
       attrToken.close || arrayIncludes(options.voidTags, tagName)
     )
+
     if (hasChildren) {
       stack.push({ tagName, children })
       const innerState = { tokens, options, cursor, stack }
@@ -126,5 +130,6 @@ export function parse(state) {
       cursor = innerState.cursor
     }
   }
+
   state.cursor = cursor
 }

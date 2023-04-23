@@ -1,10 +1,5 @@
-import { t } from '../__mocks__'
-import parser from '../parser'
 import lexer from '../lexer'
-
-function ps(index) {
-  return { index, line: 0, column: index }
-}
+import parser from '../parser'
 
 const lexerOptions = { childlessTags: [] }
 const parserOptions = {
@@ -18,25 +13,29 @@ describe(`parser`, () => {
     const str = '<h1>Hello world</h1>'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'h1',
-        attributes: [],
-        children: [
+        0: 'h1',
+        1: {},
+        2: [
           {
             type: 'text',
             content: 'Hello world',
             position: {
-              start: ps(4),
-              end: ps(15),
+              start: {
+                index: 4,
+                line: 0,
+                column: 4,
+              },
+              end: {
+                index: 15,
+                line: 0,
+                column: 15,
+              },
             },
           },
         ],
-        position: {
-          start: ps(0),
-          end: ps(str.length),
-        },
       },
     ])
   })
@@ -45,168 +44,190 @@ describe(`parser`, () => {
     const str = '<div>abc<img/>def</div>'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, { voidTags: 'img', closingTags: [] })
-    t.deepEqual(nodes, [
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'div',
-        attributes: [],
-        children: [
+        0: 'div',
+        1: {},
+        2: [
           {
             type: 'text',
             content: 'abc',
             position: {
-              start: ps(5),
-              end: ps(8),
+              start: {
+                index: 5,
+                line: 0,
+                column: 5,
+              },
+              end: {
+                index: 8,
+                line: 0,
+                column: 8,
+              },
             },
           },
           {
-            type: 'element',
-            tagName: 'img',
-            attributes: [],
-            children: [],
-            position: {
-              start: ps(8),
-              end: ps(14),
-            },
+            0: 'img',
+            1: {},
+            2: [],
           },
           {
             type: 'text',
             content: 'def',
             position: {
-              start: ps(14),
-              end: ps(17),
+              start: {
+                index: 14,
+                line: 0,
+                column: 14,
+              },
+              end: {
+                index: 17,
+                line: 0,
+                column: 17,
+              },
             },
           },
         ],
-        position: {
-          start: ps(0),
-          end: ps(str.length),
-        },
       },
     ])
   })
 
-  test('parser() should handle optional-close tags', () => {
-    {
-      const parserOptions = {
-        voidTags: [],
-        closingTags: ['p'],
-        closingTagAncestorBreakers: {},
-      }
-      const str = '<p>This is one<p>This is two</p>'
-      const tokens = lexer(str, lexerOptions)
-      const nodes = parser(tokens, parserOptions)
-      t.deepEqual(nodes, [
-        {
-          type: 'element',
-          tagName: 'p',
-          attributes: [],
-          children: [
-            {
-              type: 'text',
-              content: 'This is one',
-              position: {
-                start: ps(3),
-                end: ps(14),
+  test('parser() should handle optional-close tags - broken p tag', () => {
+    const parserOptions = {
+      voidTags: [],
+      closingTags: ['p'],
+      closingTagAncestorBreakers: {},
+    }
+    const str = '<p>This is one<p>This is two</p>'
+    const tokens = lexer(str, lexerOptions)
+    const nodes = parser(tokens, parserOptions)
+
+    expect(nodes).toEqual([
+      {
+        0: 'p',
+        1: {},
+        2: [
+          {
+            type: 'text',
+            content: 'This is one',
+            position: {
+              start: {
+                index: 3,
+                line: 0,
+                column: 3,
+              },
+              end: {
+                index: 14,
+                line: 0,
+                column: 14,
               },
             },
-          ],
-          position: {
-            start: ps(0),
-            end: ps(14),
           },
-        },
-        {
-          type: 'element',
-          tagName: 'p',
-          attributes: [],
-          children: [
-            {
-              type: 'text',
-              content: 'This is two',
-              position: {
-                start: ps(17),
-                end: ps(28),
+        ],
+      },
+      {
+        0: 'p',
+        1: {},
+        2: [
+          {
+            type: 'text',
+            content: 'This is two',
+            position: {
+              start: {
+                index: 17,
+                line: 0,
+                column: 17,
+              },
+              end: {
+                index: 28,
+                line: 0,
+                column: 28,
               },
             },
-          ],
-          position: {
-            start: ps(14),
-            end: ps(str.length),
           },
-        },
-      ])
+        ],
+      },
+    ])
+  })
+
+  test('parser() should handle optional-close tags - broken span tag', () => {
+    const parserOptions = {
+      voidTags: [],
+      closingTags: [ 'p', 'span' ],
+      closingTagAncestorBreakers: {},
     }
 
-    {
-      const parserOptions = {
-        voidTags: [],
-        closingTags: [ 'p', 'span' ],
-        closingTagAncestorBreakers: {},
-      }
-      const str = '<p>This is one <span>okay<p>This is two</p>'
-      const tokens = lexer(str, lexerOptions)
-      const nodes = parser(tokens, parserOptions)
-      t.deepEqual(nodes, [
-        {
-          type: 'element',
-          tagName: 'p',
-          attributes: [],
-          children: [
-            {
-              type: 'text',
-              content: 'This is one ',
-              position: {
-                start: ps(3),
-                end: ps(15),
+    const str = '<p>This is one <span>okay<p>This is two</p>'
+    const tokens = lexer(str, lexerOptions)
+    const nodes = parser(tokens, parserOptions)
+
+    expect(nodes).toEqual([
+      {
+        0: 'p',
+        1: {},
+        2: [
+          {
+            type: 'text',
+            content: 'This is one ',
+            position: {
+              start: {
+                index: 3,
+                line: 0,
+                column: 3,
+              },
+              end: {
+                index: 15,
+                line: 0,
+                column: 15,
               },
             },
-            {
-              type: 'element',
-              tagName: 'span',
-              attributes: [],
-              children: [
-                {
-                  type: 'text',
-                  content: 'okay',
-                  position: {
-                    start: ps(21),
-                    end: ps(25),
+          },
+          {
+            0: 'span',
+            1: {},
+            2: [
+              {
+                type: 'text',
+                content: 'okay',
+                position: {
+                  start: {
+                    index: 21,
+                    line: 0,
+                    column: 21,
+                  },
+                  end: {
+                    index: 25,
+                    line: 0,
+                    column: 25,
                   },
                 },
-              ],
-              position: {
-                start: ps(15),
-                end: ps(25),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        0: 'p',
+        1: {},
+        2: [
+          {
+            type: 'text',
+            content: 'This is two',
+            position: {
+              start: {
+                index: 28,
+                line: 0,
+                column: 28,
+              },
+              end: {
+                index: 39,
+                line: 0,
+                column: 39,
               },
             },
-          ],
-          position: {
-            start: ps(0),
-            end: ps(25),
           },
-        },
-        {
-          type: 'element',
-          tagName: 'p',
-          attributes: [],
-          children: [
-            {
-              type: 'text',
-              content: 'This is two',
-              position: {
-                start: ps(28),
-                end: ps(39),
-              },
-            },
-          ],
-          position: {
-            start: ps(25),
-            end: ps(43),
-          },
-        },
-      ])
-    }
+        ],
+      },
+    ])
   })
 
   test('parser() should auto-close unmatched child tags', () => {
@@ -218,56 +239,65 @@ describe(`parser`, () => {
     const str = '<div>This is <b>one <span>okay</div>'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'div',
-        attributes: [],
-        position: {
-          start: ps(0),
-          end: ps(36),
-        },
-        children: [
+        0: 'div',
+        1: {},
+        2: [
           {
             type: 'text',
             content: 'This is ',
             position: {
-              start: ps(5),
-              end: ps(13),
+              start: {
+                index: 5,
+                line: 0,
+                column: 5,
+              },
+              end: {
+                index: 13,
+                line: 0,
+                column: 13,
+              },
             },
           },
           {
-            type: 'element',
-            tagName: 'b',
-            attributes: [],
-            position: {
-              start: ps(13),
-              end: ps(30),
-            },
-            children: [
+            0: 'b',
+            1: {},
+            2: [
               {
                 type: 'text',
                 content: 'one ',
                 position: {
-                  start: ps(16),
-                  end: ps(20),
+                  start: {
+                    index: 16,
+                    line: 0,
+                    column: 16,
+                  },
+                  end: {
+                    index: 20,
+                    line: 0,
+                    column: 20,
+                  },
                 },
               },
               {
-                type: 'element',
-                tagName: 'span',
-                attributes: [],
-                position: {
-                  start: ps(20),
-                  end: ps(30),
-                },
-                children: [
+                0: 'span',
+                1: {},
+                2: [
                   {
                     type: 'text',
                     content: 'okay',
                     position: {
-                      start: ps(26),
-                      end: ps(30),
+                      start: {
+                        index: 26,
+                        line: 0,
+                        column: 26,
+                      },
+                      end: {
+                        index: 30,
+                        line: 0,
+                        column: 30,
+                      },
                     },
                   },
                 ],
@@ -282,23 +312,22 @@ describe(`parser`, () => {
   test('parser() should handle empty token arrays', () => {
     const tokens = []
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [])
+    expect(nodes).toEqual([])
   })
 
   test('parser() should report the element attributes', () => {
     const str = '<div class="cake" data-key="abc" disabled></div>'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'div',
-        attributes: [ 'class="cake"', 'data-key="abc"', 'disabled' ],
-        position: {
-          start: ps(0),
-          end: ps(48),
+        0: 'div',
+        1: {
+          class: 'cake',
+          'data-key': 'abc',
+          disabled: '',
         },
-        children: [],
+        2: [],
       },
     ])
   })
@@ -307,22 +336,26 @@ describe(`parser`, () => {
     const str = '<div>abc'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'div',
-        attributes: [],
-        position: {
-          start: ps(0),
-          end: ps(str.length),
-        },
-        children: [
+        0: 'div',
+        1: {},
+        2: [
           {
             type: 'text',
             content: 'abc',
             position: {
-              start: ps(5),
-              end: ps(str.length),
+              start: {
+                index: 5,
+                line: 0,
+                column: 5,
+              },
+              end: {
+                index: 8,
+                line: 0,
+                column: 8,
+              },
             },
           },
         ],
@@ -334,16 +367,11 @@ describe(`parser`, () => {
     const str = '<You-Know-8>'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'You-Know-8',
-        attributes: [],
-        position: {
-          start: ps(0),
-          end: ps(str.length),
-        },
-        children: [],
+        0: 'You-Know-8',
+        1: {},
+        2: [],
       },
     ])
   })
@@ -352,22 +380,26 @@ describe(`parser`, () => {
     const str = '<div>abc</DIV>def'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'div',
-        attributes: [],
-        position: {
-          start: ps(0),
-          end: ps(14),
-        },
-        children: [
+        0: 'div',
+        1: {},
+        2: [
           {
             type: 'text',
             content: 'abc',
             position: {
-              start: ps(5),
-              end: ps(8),
+              start: {
+                index: 5,
+                line: 0,
+                column: 5,
+              },
+              end: {
+                index: 8,
+                line: 0,
+                column: 8,
+              },
             },
           },
         ],
@@ -376,14 +408,22 @@ describe(`parser`, () => {
         type: 'text',
         content: 'def',
         position: {
-          start: ps(14),
-          end: ps(17),
+          start: {
+            index: 14,
+            line: 0,
+            column: 14,
+          },
+          end: {
+            index: 17,
+            line: 0,
+            column: 17,
+          },
         },
       },
     ])
   })
 
-  test('parser() should handle ancestor breaker special case (#39)', () => {
+  describe(`special case is where a <ul|ol|menu> is encountered within an <li>`, () => {
     /*
       To summarize, this special case is where a <ul|ol|menu> is
       encountered within an <li>. The default behavior for <li>s
@@ -393,7 +433,7 @@ describe(`parser`, () => {
       This edge-case also applies to <dt|dd> in <dl>s.
     */
 
-    {
+    test('parser() should handle ancestor breaker special case (#39.1)', () => {
       const str = '<ul><li>abc<ul><li>def</li></ul></li></ul>'
       const tokens = lexer(str, lexerOptions)
       const nodes = parser(tokens, {
@@ -404,57 +444,53 @@ describe(`parser`, () => {
         },
       })
 
-      t.deepEqual(nodes, [
+      expect(nodes).toEqual([
         {
-          type: 'element',
-          tagName: 'ul',
-          attributes: [],
-          position: {
-            start: ps(0),
-            end: ps(42),
-          },
-          children: [
+          0: 'ul',
+          1: {},
+          2: [
             {
-              type: 'element',
-              tagName: 'li',
-              attributes: [],
-              position: {
-                start: ps(4),
-                end: ps(37),
-              },
-              children: [
+              0: 'li',
+              1: {},
+              2: [
                 {
                   type: 'text',
                   content: 'abc',
                   position: {
-                    start: ps(8),
-                    end: ps(11),
+                    start: {
+                      index: 8,
+                      line: 0,
+                      column: 8,
+                    },
+                    end: {
+                      index: 11,
+                      line: 0,
+                      column: 11,
+                    },
                   },
                 },
                 {
-                  type: 'element',
-                  tagName: 'ul',
-                  attributes: [],
-                  position: {
-                    start: ps(11),
-                    end: ps(32),
-                  },
-                  children: [
+                  0: 'ul',
+                  1: {},
+                  2: [
                     {
-                      type: 'element',
-                      tagName: 'li',
-                      attributes: [],
-                      position: {
-                        start: ps(15),
-                        end: ps(27),
-                      },
-                      children: [
+                      0: 'li',
+                      1: {},
+                      2: [
                         {
                           type: 'text',
                           content: 'def',
                           position: {
-                            start: ps(19),
-                            end: ps(22),
+                            start: {
+                              index: 19,
+                              line: 0,
+                              column: 19,
+                            },
+                            end: {
+                              index: 22,
+                              line: 0,
+                              column: 22,
+                            },
                           },
                         },
                       ],
@@ -466,9 +502,9 @@ describe(`parser`, () => {
           ],
         },
       ])
-    }
+    })
 
-    {
+    test('parser() should handle ancestor breaker special case (#39.2)', () => {
       const str = '<ul><li>abc<ul><span><li>def</li></span></ul></li></ul>'
       const tokens = lexer(str, lexerOptions)
       const nodes = parser(tokens, {
@@ -479,66 +515,57 @@ describe(`parser`, () => {
         },
       })
 
-      t.deepEqual(nodes, [
+      expect(nodes).toEqual([
         {
-          type: 'element',
-          tagName: 'ul',
-          attributes: [],
-          position: {
-            start: ps(0),
-            end: ps(55),
-          },
-          children: [
+          0: 'ul',
+          1: {},
+          2: [
             {
-              type: 'element',
-              tagName: 'li',
-              attributes: [],
-              position: {
-                start: ps(4),
-                end: ps(50),
-              },
-              children: [
+              0: 'li',
+              1: {},
+              2: [
                 {
                   type: 'text',
                   content: 'abc',
                   position: {
-                    start: ps(8),
-                    end: ps(11),
+                    start: {
+                      index: 8,
+                      line: 0,
+                      column: 8,
+                    },
+                    end: {
+                      index: 11,
+                      line: 0,
+                      column: 11,
+                    },
                   },
                 },
                 {
-                  type: 'element',
-                  tagName: 'ul',
-                  attributes: [],
-                  position: {
-                    start: ps(11),
-                    end: ps(45),
-                  },
-                  children: [
+                  0: 'ul',
+                  1: {},
+                  2: [
                     {
-                      type: 'element',
-                      tagName: 'span',
-                      attributes: [],
-                      position: {
-                        start: ps(15),
-                        end: ps(40),
-                      },
-                      children: [
+                      0: 'span',
+                      1: {},
+                      2: [
                         {
-                          type: 'element',
-                          tagName: 'li',
-                          attributes: [],
-                          position: {
-                            start: ps(21),
-                            end: ps(33),
-                          },
-                          children: [
+                          0: 'li',
+                          1: {},
+                          2: [
                             {
                               type: 'text',
                               content: 'def',
                               position: {
-                                start: ps(25),
-                                end: ps(28),
+                                start: {
+                                  index: 25,
+                                  line: 0,
+                                  column: 25,
+                                },
+                                end: {
+                                  index: 28,
+                                  line: 0,
+                                  column: 28,
+                                },
                               },
                             },
                           ],
@@ -552,9 +579,9 @@ describe(`parser`, () => {
           ],
         },
       ])
-    }
+    })
 
-    {
+    test('parser() should handle ancestor breaker special case (#39.3)', () => {
       const str = '<ul><li>abc<ul><li>def<li>ghi</li></ul></li></ul>'
       const tokens = lexer(str, lexerOptions)
       const nodes = parser(tokens, {
@@ -565,76 +592,75 @@ describe(`parser`, () => {
         },
       })
 
-      t.deepEqual(nodes, [
+      expect(nodes).toEqual([
         {
-          type: 'element',
-          tagName: 'ul',
-          attributes: [],
-          position: {
-            start: ps(0),
-            end: ps(49),
-          },
-          children: [
+          0: 'ul',
+          1: {},
+          2: [
             {
-              type: 'element',
-              tagName: 'li',
-              attributes: [],
-              position: {
-                start: ps(4),
-                end: ps(44),
-              },
-              children: [
+              0: 'li',
+              1: {},
+              2: [
                 {
                   type: 'text',
                   content: 'abc',
                   position: {
-                    start: ps(8),
-                    end: ps(11),
+                    start: {
+                      index: 8,
+                      line: 0,
+                      column: 8,
+                    },
+                    end: {
+                      index: 11,
+                      line: 0,
+                      column: 11,
+                    },
                   },
                 },
                 {
-                  type: 'element',
-                  tagName: 'ul',
-                  attributes: [],
-                  position: {
-                    start: ps(11),
-                    end: ps(39),
-                  },
-                  children: [
+                  0: 'ul',
+                  1: {},
+                  2: [
                     {
-                      type: 'element',
-                      tagName: 'li',
-                      attributes: [],
-                      position: {
-                        start: ps(15),
-                        end: ps(22),
-                      },
-                      children: [
+                      0: 'li',
+                      1: {},
+                      2: [
                         {
                           type: 'text',
                           content: 'def',
                           position: {
-                            start: ps(19),
-                            end: ps(22),
+                            start: {
+                              index: 19,
+                              line: 0,
+                              column: 19,
+                            },
+                            end: {
+                              index: 22,
+                              line: 0,
+                              column: 22,
+                            },
                           },
                         },
                       ],
                     },
                     {
-                      type: 'element',
-                      tagName: 'li',
-                      attributes: [],
-                      position: {
-                        start: ps(22),
-                        end: ps(34),
-                      },
-                      children: [
+                      0: 'li',
+                      1: {},
+                      2: [
                         {
                           type: 'text',
                           content: 'ghi',
                           position: {
-                            start: ps(26),
-                            end: ps(29),
+                            start: {
+                              index: 26,
+                              line: 0,
+                              column: 26,
+                            },
+                            end: {
+                              index: 29,
+                              line: 0,
+                              column: 29,
+                            },
                           },
                         },
                       ],
@@ -646,7 +672,7 @@ describe(`parser`, () => {
           ],
         },
       ])
-    }
+    })
   })
 
   test('parser() should handle nested tables', () => {
@@ -663,79 +689,39 @@ describe(`parser`, () => {
       },
     })
 
-    t.deepEqual(nodes, [
+    expect(nodes).toEqual([
       {
-        type: 'element',
-        tagName: 'table',
-        attributes: [],
-        position: {
-          start: ps(0),
-          end: ps(96),
-        },
-        children: [
+        0: 'table',
+        1: {},
+        2: [
           {
-            type: 'element',
-            tagName: 'tbody',
-            attributes: [],
-            position: {
-              start: ps(7),
-              end: ps(88),
-            },
-            children: [
+            0: 'tbody',
+            1: {},
+            2: [
               {
-                type: 'element',
-                tagName: 'tr',
-                attributes: [],
-                position: {
-                  start: ps(14),
-                  end: ps(80),
-                },
-                children: [
+                0: 'tr',
+                1: {},
+                2: [
                   {
-                    type: 'element',
-                    tagName: 'td',
-                    attributes: [],
-                    position: {
-                      start: ps(18),
-                      end: ps(75),
-                    },
-                    children: [
+                    0: 'td',
+                    1: {},
+                    2: [
                       {
-                        type: 'element',
-                        tagName: 'table',
-                        attributes: [],
-                        position: {
-                          start: ps(22),
-                          end: ps(70),
-                        },
-                        children: [
+                        0: 'table',
+                        1: {},
+                        2: [
                           {
-                            type: 'element',
-                            tagName: 'tbody',
-                            attributes: [],
-                            position: {
-                              start: ps(29),
-                              end: ps(62),
-                            },
-                            children: [
+                            0: 'tbody',
+                            1: {},
+                            2: [
                               {
-                                type: 'element',
-                                tagName: 'tr',
-                                attributes: [],
-                                position: {
-                                  start: ps(36),
-                                  end: ps(54),
-                                },
-                                children: [
+                                0: 'tr',
+                                1: {},
+                                2: [
                                   {
-                                    type: 'element',
-                                    tagName: 'td',
-                                    attributes: [],
-                                    position: {
-                                      start: ps(40),
-                                      end: ps(49),
-                                    },
-                                    children: [],
+                                    0: 'td',
+                                    1: {},
+                                    2: [],
                                   },
                                 ],
                               },
@@ -762,13 +748,22 @@ describe(`parser`, () => {
     const str = '</i>x'
     const tokens = lexer(str, lexerOptions)
     const nodes = parser(tokens, parserOptions)
-    t.deepEqual(nodes, [
+
+    expect(nodes).toEqual([
       {
         type: 'text',
         content: 'x',
         position: {
-          start: ps(4),
-          end: ps(str.length),
+          start: {
+            index: 4,
+            line: 0,
+            column: 4,
+          },
+          end: {
+            index: 5,
+            line: 0,
+            column: 5,
+          },
         },
       },
     ])
