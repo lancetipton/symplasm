@@ -5,9 +5,7 @@ module.exports = {
     tsconfigRootDir: require('path').join(__dirname, '../'),
   },
   root: true,
-  ignorePatterns: [
-    'build/',
-  ],
+  ignorePatterns: [ 'build/', `docs/`, `node_modules/`, `.*`, `src/prop_map.js` ],
   globals: {
     jest: true,
     __DEV__: true,

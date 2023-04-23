@@ -16,46 +16,39 @@ const minify = false
 
 const cjsBuild = async () => {
   // Build the files with esbuild
-  await esbuild.build({
-    entryPoints: [entry],
-    outdir: cjsOut,
-    bundle: true,
-    minify: minify,
-    sourcemap: true,
-    platform: "node",
-    target: ["node16"],
-    plugins: [NodeModulesPolyfillPlugin()]
-  })
-  .catch(() => process.exit(1))
+  await esbuild
+    .build({
+      entryPoints: [entry],
+      outdir: cjsOut,
+      bundle: true,
+      minify: minify,
+      sourcemap: true,
+      platform: 'node',
+      target: ['node16'],
+      plugins: [NodeModulesPolyfillPlugin()],
+    })
+    .catch(() => process.exit(1))
 }
 
 const esmBuild = async () => {
   // Build the files with esbuild
-  await esbuild.build({
-    entryPoints: [entry],
-    format: "esm",
-    outdir: esmOut,
-    bundle: true,
-    minify: minify,
-    sourcemap: true,
-    splitting: true,
-    target: ["esnext"],
-    define: { global: "window" },
-    plugins: [
-      NodeModulesPolyfillPlugin(),
-      typecheckPlugin(),
-      dtsPlugin(),
-    ]
-  })
-  .catch(() => process.exit(1))
+  await esbuild
+    .build({
+      entryPoints: [entry],
+      format: 'esm',
+      outdir: esmOut,
+      bundle: true,
+      minify: minify,
+      sourcemap: true,
+      splitting: true,
+      target: ['esnext'],
+      define: { global: 'window' },
+      plugins: [NodeModulesPolyfillPlugin(), typecheckPlugin(), dtsPlugin()],
+    })
+    .catch(() => process.exit(1))
 }
-
-
-
 
 ;(async () => {
   await cjsBuild()
   await esmBuild()
 })()
-
-

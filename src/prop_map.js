@@ -482,12 +482,11 @@ const propMap = {
   ychannelselector: 'yChannelSelector',
   z: 'z',
   zoomandpan: 'zoomAndPan',
-};
-
-const revPropMap = Object.entries(propMap)
-    .reduce((obj, [key, value]) => ({ ...obj, [value]: key }), {});
-
-export {
-  propMap,
-  revPropMap
 }
+
+const revPropMap = Object.entries(propMap).reduce(
+  (obj, [key, value]) => ({ ...obj, [value]: key }),
+  {}
+)
+
+export { propMap, revPropMap }

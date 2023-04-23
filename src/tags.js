@@ -2,15 +2,28 @@
   Tags which contain arbitary non-parsed content
   For example: <script> JavaScript should not be parsed
 */
-export const childlessTags = ['style', 'script', 'template']
+export const childlessTags = [ 'style', 'script', 'template' ]
 
 /*
   Tags which auto-close because they cannot be nested
   For example: <p>Outer<p>Inner is <p>Outer</p><p>Inner</p>
 */
 export const closingTags = [
-  'html', 'head', 'body', 'p', 'dt', 'dd', 'li', 'option',
-  'thead', 'th', 'tbody', 'tr', 'td', 'tfoot', 'colgroup'
+  'html',
+  'head',
+  'body',
+  'p',
+  'dt',
+  'dd',
+  'li',
+  'option',
+  'thead',
+  'th',
+  'tbody',
+  'tr',
+  'td',
+  'tfoot',
+  'colgroup',
 ]
 
 /*
@@ -21,14 +34,14 @@ export const closingTags = [
   the top-level <li> should not auto-close.
 */
 export const closingTagAncestorBreakers = {
-  li: ['ul', 'ol', 'menu'],
+  li: [ 'ul', 'ol', 'menu' ],
   dt: ['dl'],
   dd: ['dl'],
   tbody: ['table'],
   thead: ['table'],
   tfoot: ['table'],
   tr: ['table'],
-  td: ['table']
+  td: ['table'],
 }
 
 /*
@@ -36,7 +49,21 @@ export const closingTagAncestorBreakers = {
   For example: <img> does not need </img>
 */
 export const voidTags = [
-  '!doctype', 'area', 'base', 'br', 'col', 'command',
-  'embed', 'hr', 'img', 'input', 'keygen', 'link',
-  'meta', 'param', 'source', 'track', 'wbr'
+  '!doctype',
+  'area',
+  'base',
+  'br',
+  'col',
+  'command',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'keygen',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
 ]

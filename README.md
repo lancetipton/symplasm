@@ -1,4 +1,5 @@
 # Symplasm
+
 > https://github.com/lancetipton/symplasm
 
 > Parse HTML into td-VDom JS Object
@@ -8,14 +9,16 @@
 ## Example
 
 ### Input HTML String
+
 ```html
-<div class='post post-featured'>
+<div class="post post-featured">
   <p>Symplasm feels good...</p>
   <!-- ...like a dream come true. -->
 </div>
 ```
 
 ### Export JS Object
+
 ```js
 {
   0: 'div',
@@ -34,39 +37,39 @@
         },
         '<!--...like a dream come true.-->',
       ]
-      
+
     }
   ]
 }
 ```
+
 ## To Use
 
 **symplasm.parse**
-* params
-  * htmlString - string of html content
-  * Options - JS object ( See options below )
+
+- params
+  - htmlString - string of html content
+  - Options - JS object ( See options below )
 
 ```js
-
 const symplasm = require('symplasm')
 
 const jsObject = symplasm.parse(html, options)
-
 ```
 
 **symplasm.stringify**
-* params
-  * jsObject - a td-VDom formatted object to be converted into an html string
+
+- params
+  - jsObject - a td-VDom formatted object to be converted into an html string
 
 ```js
-
-const htmlString = symplasm.stringify( jsObject )
-
+const htmlString = symplasm.stringify(jsObject)
 ```
 
 ## Options
 
 **Symplasm.parse Default Options**
+
 ```js
 {
   root: {
@@ -82,21 +85,21 @@ const htmlString = symplasm.stringify( jsObject )
 }
 ```
 
-* root
+- root
 
-  * Override the default div object
-  * Must be in td-VDom format
-  * Any children add in the 2 position, will be added first
-  
-* tagConvert
+  - Override the default div object
+  - Must be in td-VDom format
+  - Any children add in the 2 position, will be added first
 
-  * Key / value pair of tags to be converted during the parse
-  * Key is the tag to be converted
-  * Value is the tag to convert to
-    * Can be `tag type / element selector as a string` / `function` / `td-VDom object`
-    * `Function` must retrun a `tag type as a string` or `td-VDom object`
-    * Any children of the td-VDom object will be added before other children
-    * Example
+- tagConvert
+
+  - Key / value pair of tags to be converted during the parse
+  - Key is the tag to be converted
+  - Value is the tag to convert to
+    - Can be `tag type / element selector as a string` / `function` / `td-VDom object`
+    - `Function` must retrun a `tag type as a string` or `td-VDom object`
+    - Any children of the td-VDom object will be added before other children
+    - Example
       ```js
         {
           // only paragraph with span-text class with be converted to spans
@@ -113,21 +116,21 @@ const htmlString = symplasm.stringify( jsObject )
           }
         }
       ```
-      
-* attrKeyConvert
 
-  * Key / value pair of property keys to be converted during the parse
-  * Key is the key to be converted
-    * Select multiple elements by using a comma
-  * Value is the property key to convert to
-    * Can be `string` / `function` / `object`
-      * `Functions` must retrun a `string`
-      * If it's an object
-        * Sub items can be defined to allow only updating the specified elements
-        * Must be a Key / value pair to be converted during the parse
-        * Key must be an `tag type / element selector as a string`
-        * Value can be a `string` / `function` - **must retrun a string**
-  * Example
+- attrKeyConvert
+
+  - Key / value pair of property keys to be converted during the parse
+  - Key is the key to be converted
+    - Select multiple elements by using a comma
+  - Value is the property key to convert to
+    - Can be `string` / `function` / `object`
+      - `Functions` must retrun a `string`
+      - If it's an object
+        - Sub items can be defined to allow only updating the specified elements
+        - Must be a Key / value pair to be converted during the parse
+        - Key must be an `tag type / element selector as a string`
+        - Value can be a `string` / `function` - **must retrun a string**
+  - Example
     ```js
       {
         // All class attributes will be converted to className
@@ -145,11 +148,11 @@ const htmlString = symplasm.stringify( jsObject )
       }
     ```
 
-* attrValueConvert
+- attrValueConvert
 
-  * Same as attrKeyConvert, but for the value
-      * Select multiple elements by using a comma
-  * Example
+  - Same as attrKeyConvert, but for the value
+    - Select multiple elements by using a comma
+  - Example
     ```js
       {
         class: {
@@ -169,10 +172,10 @@ const htmlString = symplasm.stringify( jsObject )
       }
     ```
 
-* attrKeyAdd
+- attrKeyAdd
 
-  * Same as attrKeyConvert, but to add a key value pair
-  * Example
+  - Same as attrKeyConvert, but to add a key value pair
+  - Example
     ```js
       {
         'onclick': {
@@ -189,22 +192,22 @@ const htmlString = symplasm.stringify( jsObject )
       }
     ```
 
-* trim
+- trim
 
-  * Removes all white space from text
+  - Removes all white space from text
 
-* lowerCaseTag
+- lowerCaseTag
 
-  * Converts all dom node tags to lowercase
-  * I.E. Div => div  ||  IMG => img
-  
-* attrCamelCase
+  - Converts all dom node tags to lowercase
+  - I.E. Div => div || IMG => img
 
-  * Converts node properties to camelcase
-  * Based off [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
+- attrCamelCase
 
+  - Converts node properties to camelcase
+  - Based off [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
 
 **Symplasm.stringify Default Options**
+
 ```js
 {
   attrLowerCase: false,
@@ -212,13 +215,13 @@ const htmlString = symplasm.stringify( jsObject )
 }
 ```
 
-* attrLowerCase
+- attrLowerCase
 
-  * Converts node properties to lowercase
-  * Does the reverse of [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
+  - Converts node properties to lowercase
+  - Does the reverse of [ReactDom](https://github.com/facebook/react/blob/master/packages/react-dom/src/shared/possibleStandardNames.jsReactDom)
 
-* styleAsCss
+- styleAsCss
 
-  * Converts JS CSS styles to Standard CSS
-  * Breaks the string at all uppercase letters, adds `-`, then lowercases the string
-  * I.E. marginTop:'20px' => margin-top: 20px
+  - Converts JS CSS styles to Standard CSS
+  - Breaks the string at all uppercase letters, adds `-`, then lowercases the string
+  - I.E. marginTop:'20px' => margin-top: 20px

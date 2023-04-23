@@ -1,10 +1,8 @@
 import { t } from '../__mocks__'
-import test from 'ava'
-import {parse, stringify} from '../lib'
-import {formatAttributes} from '../lib/stringify'
+import { parse, stringify } from '../symplasm'
+import { formatAttributes } from '../stringify'
 
 describe(`stringify`, () => {
-
   test('stringify() should handle simple conversions', () => {
     const str1 = '<h1>Text</h1>'
     t.is(stringify(parse(str1)), str1)
@@ -48,21 +46,30 @@ describe(`stringify`, () => {
     const html = [
       '<html>    ',
       '    <h1>    Document    </h1>',
-      '</html>   '
+      '</html>   ',
     ].join('\n')
     t.is(stringify(parse(html)), html)
   })
 
-  test('formatAttributes should stringify attribute lists correctly', () => {
+  test.only('formatAttributes should stringify attribute lists correctly', () => {
     t.is(formatAttributes([]), '')
-    t.is(formatAttributes([{
-      key: 'disabled',
-      value: null
-    }]), ' disabled')
-    t.is(formatAttributes([{
-      key: 'data-key',
-      value: '123'
-    }]), " data-key='123'")
+    t.is(
+      formatAttributes([
+        {
+          key: 'disabled',
+          value: null,
+        },
+      ]),
+      ' disabled'
+    )
+    t.is(
+      formatAttributes([
+        {
+          key: 'data-key',
+          value: '123',
+        },
+      ]),
+      " data-key='123'"
+    )
   })
-
 })

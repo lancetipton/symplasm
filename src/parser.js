@@ -1,18 +1,15 @@
-import {arrayIncludes} from './compat'
+import { arrayIncludes } from './compat'
 
-import {
-  splitKeyValue,
-  unquote,
-} from './helpers'
+import { splitKeyValue, unquote } from './helpers'
 
-export default function parser (tokens, options) {
-  const root = {tagName: null, children: []}
-  const state = {tokens, options, cursor: 0, stack: [root]}
+export default function parser(tokens, options) {
+  const root = { tagName: null, children: [] }
+  const state = { tokens, options, cursor: 0, stack: [root] }
   parse(state)
   return root.children
 }
 
-export function hasTerminalParent (tagName, stack, terminals) {
+export function hasTerminalParent(tagName, stack, terminals) {
   const tagParents = terminals[tagName]
   if (tagParents) {
     let currentIndex = stack.length - 1
@@ -30,12 +27,12 @@ export function hasTerminalParent (tagName, stack, terminals) {
   return false
 }
 
-export function parse (state) {
-  const {tokens, options} = state
-  let {stack} = state
+export function parse(state) {
+  const { tokens, options } = state
+  let { stack } = state
   let nodes = stack[stack.length - 1].children
   const len = tokens.length
-  let {cursor} = state
+  let { cursor } = state
   while (cursor < len) {
     const token = tokens[cursor]
     if (token.type !== 'tag-start') {
@@ -64,7 +61,8 @@ export function parse (state) {
       }
       if (didRewind) {
         break
-      } else {
+      }
+      else {
         continue
       }
     }
@@ -103,24 +101,27 @@ export function parse (state) {
     cursor++
     const children = []
 
-    attributes = Array.isArray(attributes) && attributes.length
-      ? attributes.reduce((attrs, attr) => {
-          const parts = splitKeyValue(attr, '=') 
-          attrs[parts[0]] = parts[1] && unquote(parts[1]) || ''
+    attributes =
+      Array.isArray(attributes) && attributes.length
+        ? attributes.reduce((attrs, attr) => {
+          const parts = splitKeyValue(attr, '=')
+          attrs[parts[0]] = (parts[1] && unquote(parts[1])) || ''
           return attrs
         }, {})
-      : {}
+        : {}
 
     nodes.push({
       0: tagToken.content,
       1: attributes,
-      2: children
+      2: children,
     })
 
-    const hasChildren = !(attrToken.close || arrayIncludes(options.voidTags, tagName))
+    const hasChildren = !(
+      attrToken.close || arrayIncludes(options.voidTags, tagName)
+    )
     if (hasChildren) {
-      stack.push({tagName, children})
-      const innerState = {tokens, options, cursor, stack}
+      stack.push({ tagName, children })
+      const innerState = { tokens, options, cursor, stack }
       parse(innerState)
       cursor = innerState.cursor
     }

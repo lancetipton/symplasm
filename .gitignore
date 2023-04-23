@@ -183,3 +183,5 @@ jspm_packages/
 # Playwright browser metadata for testing
 browser-meta.json
 reports/
+.cache
+.*

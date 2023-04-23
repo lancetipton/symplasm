@@ -2,7 +2,7 @@ import { t } from '../__mocks__'
 import parser from '../parser'
 import lexer from '../lexer'
 
-function ps (index) {
+function ps(index) {
   return { index, line: 0, column: index }
 }
 
@@ -10,11 +10,10 @@ const lexerOptions = { childlessTags: [] }
 const parserOptions = {
   voidTags: [],
   closingTags: [],
-  closingTagAncestorBreakers: {}
+  closingTagAncestorBreakers: {},
 }
 
 describe(`parser`, () => {
-
   test('parser() should return nodes', () => {
     const str = '<h1>Hello world</h1>'
     const tokens = lexer(str, lexerOptions)
@@ -30,15 +29,15 @@ describe(`parser`, () => {
             content: 'Hello world',
             position: {
               start: ps(4),
-              end: ps(15)
-            }
-          }
+              end: ps(15),
+            },
+          },
         ],
         position: {
           start: ps(0),
-          end: ps(str.length)
-        }
-      }
+          end: ps(str.length),
+        },
+      },
     ])
   })
 
@@ -57,8 +56,8 @@ describe(`parser`, () => {
             content: 'abc',
             position: {
               start: ps(5),
-              end: ps(8)
-            }
+              end: ps(8),
+            },
           },
           {
             type: 'element',
@@ -67,23 +66,23 @@ describe(`parser`, () => {
             children: [],
             position: {
               start: ps(8),
-              end: ps(14)
-            }
+              end: ps(14),
+            },
           },
           {
             type: 'text',
             content: 'def',
             position: {
               start: ps(14),
-              end: ps(17)
-            }
-          }
+              end: ps(17),
+            },
+          },
         ],
         position: {
           start: ps(0),
-          end: ps(str.length)
-        }
-      }
+          end: ps(str.length),
+        },
+      },
     ])
   })
 
@@ -92,7 +91,7 @@ describe(`parser`, () => {
       const parserOptions = {
         voidTags: [],
         closingTags: ['p'],
-        closingTagAncestorBreakers: {}
+        closingTagAncestorBreakers: {},
       }
       const str = '<p>This is one<p>This is two</p>'
       const tokens = lexer(str, lexerOptions)
@@ -108,14 +107,14 @@ describe(`parser`, () => {
               content: 'This is one',
               position: {
                 start: ps(3),
-                end: ps(14)
-              }
-            }
+                end: ps(14),
+              },
+            },
           ],
           position: {
             start: ps(0),
-            end: ps(14)
-          }
+            end: ps(14),
+          },
         },
         {
           type: 'element',
@@ -127,23 +126,23 @@ describe(`parser`, () => {
               content: 'This is two',
               position: {
                 start: ps(17),
-                end: ps(28)
-              }
-            }
+                end: ps(28),
+              },
+            },
           ],
           position: {
             start: ps(14),
-            end: ps(str.length)
-          }
-        }
+            end: ps(str.length),
+          },
+        },
       ])
     }
 
     {
       const parserOptions = {
         voidTags: [],
-        closingTags: ['p', 'span'],
-        closingTagAncestorBreakers: {}
+        closingTags: [ 'p', 'span' ],
+        closingTagAncestorBreakers: {},
       }
       const str = '<p>This is one <span>okay<p>This is two</p>'
       const tokens = lexer(str, lexerOptions)
@@ -159,8 +158,8 @@ describe(`parser`, () => {
               content: 'This is one ',
               position: {
                 start: ps(3),
-                end: ps(15)
-              }
+                end: ps(15),
+              },
             },
             {
               type: 'element',
@@ -172,20 +171,20 @@ describe(`parser`, () => {
                   content: 'okay',
                   position: {
                     start: ps(21),
-                    end: ps(25)
-                  }
-                }
+                    end: ps(25),
+                  },
+                },
               ],
               position: {
                 start: ps(15),
-                end: ps(25)
-              }
-            }
+                end: ps(25),
+              },
+            },
           ],
           position: {
             start: ps(0),
-            end: ps(25)
-          }
+            end: ps(25),
+          },
         },
         {
           type: 'element',
@@ -197,15 +196,15 @@ describe(`parser`, () => {
               content: 'This is two',
               position: {
                 start: ps(28),
-                end: ps(39)
-              }
-            }
+                end: ps(39),
+              },
+            },
           ],
           position: {
             start: ps(25),
-            end: ps(43)
-          }
-        }
+            end: ps(43),
+          },
+        },
       ])
     }
   })
@@ -214,7 +213,7 @@ describe(`parser`, () => {
     const parserOptions = {
       voidTags: [],
       closingTags: [],
-      closingTagAncestorBreakers: {}
+      closingTagAncestorBreakers: {},
     }
     const str = '<div>This is <b>one <span>okay</div>'
     const tokens = lexer(str, lexerOptions)
@@ -226,7 +225,7 @@ describe(`parser`, () => {
         attributes: [],
         position: {
           start: ps(0),
-          end: ps(36)
+          end: ps(36),
         },
         children: [
           {
@@ -234,8 +233,8 @@ describe(`parser`, () => {
             content: 'This is ',
             position: {
               start: ps(5),
-              end: ps(13)
-            }
+              end: ps(13),
+            },
           },
           {
             type: 'element',
@@ -243,7 +242,7 @@ describe(`parser`, () => {
             attributes: [],
             position: {
               start: ps(13),
-              end: ps(30)
+              end: ps(30),
             },
             children: [
               {
@@ -251,8 +250,8 @@ describe(`parser`, () => {
                 content: 'one ',
                 position: {
                   start: ps(16),
-                  end: ps(20)
-                }
+                  end: ps(20),
+                },
               },
               {
                 type: 'element',
@@ -260,7 +259,7 @@ describe(`parser`, () => {
                 attributes: [],
                 position: {
                   start: ps(20),
-                  end: ps(30)
+                  end: ps(30),
                 },
                 children: [
                   {
@@ -268,15 +267,15 @@ describe(`parser`, () => {
                     content: 'okay',
                     position: {
                       start: ps(26),
-                      end: ps(30)
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+                      end: ps(30),
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
     ])
   })
 
@@ -294,13 +293,13 @@ describe(`parser`, () => {
       {
         type: 'element',
         tagName: 'div',
-        attributes: ['class="cake"', 'data-key="abc"', 'disabled'],
+        attributes: [ 'class="cake"', 'data-key="abc"', 'disabled' ],
         position: {
           start: ps(0),
-          end: ps(48)
+          end: ps(48),
         },
-        children: []
-      }
+        children: [],
+      },
     ])
   })
 
@@ -315,7 +314,7 @@ describe(`parser`, () => {
         attributes: [],
         position: {
           start: ps(0),
-          end: ps(str.length)
+          end: ps(str.length),
         },
         children: [
           {
@@ -323,11 +322,11 @@ describe(`parser`, () => {
             content: 'abc',
             position: {
               start: ps(5),
-              end: ps(str.length)
-            }
-          }
-        ]
-      }
+              end: ps(str.length),
+            },
+          },
+        ],
+      },
     ])
   })
 
@@ -342,10 +341,10 @@ describe(`parser`, () => {
         attributes: [],
         position: {
           start: ps(0),
-          end: ps(str.length)
+          end: ps(str.length),
         },
-        children: []
-      }
+        children: [],
+      },
     ])
   })
 
@@ -360,7 +359,7 @@ describe(`parser`, () => {
         attributes: [],
         position: {
           start: ps(0),
-          end: ps(14)
+          end: ps(14),
         },
         children: [
           {
@@ -368,19 +367,19 @@ describe(`parser`, () => {
             content: 'abc',
             position: {
               start: ps(5),
-              end: ps(8)
-            }
-          }
-        ]
+              end: ps(8),
+            },
+          },
+        ],
       },
       {
         type: 'text',
         content: 'def',
         position: {
           start: ps(14),
-          end: ps(17)
-        }
-      }
+          end: ps(17),
+        },
+      },
     ])
   })
 
@@ -401,8 +400,8 @@ describe(`parser`, () => {
         voidTags: [],
         closingTags: ['li'],
         closingTagAncestorBreakers: {
-          li: ['ul']
-        }
+          li: ['ul'],
+        },
       })
 
       t.deepEqual(nodes, [
@@ -412,7 +411,7 @@ describe(`parser`, () => {
           attributes: [],
           position: {
             start: ps(0),
-            end: ps(42)
+            end: ps(42),
           },
           children: [
             {
@@ -421,7 +420,7 @@ describe(`parser`, () => {
               attributes: [],
               position: {
                 start: ps(4),
-                end: ps(37)
+                end: ps(37),
               },
               children: [
                 {
@@ -429,8 +428,8 @@ describe(`parser`, () => {
                   content: 'abc',
                   position: {
                     start: ps(8),
-                    end: ps(11)
-                  }
+                    end: ps(11),
+                  },
                 },
                 {
                   type: 'element',
@@ -438,7 +437,7 @@ describe(`parser`, () => {
                   attributes: [],
                   position: {
                     start: ps(11),
-                    end: ps(32)
+                    end: ps(32),
                   },
                   children: [
                     {
@@ -447,7 +446,7 @@ describe(`parser`, () => {
                       attributes: [],
                       position: {
                         start: ps(15),
-                        end: ps(27)
+                        end: ps(27),
                       },
                       children: [
                         {
@@ -455,17 +454,17 @@ describe(`parser`, () => {
                           content: 'def',
                           position: {
                             start: ps(19),
-                            end: ps(22)
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+                            end: ps(22),
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       ])
     }
 
@@ -476,8 +475,8 @@ describe(`parser`, () => {
         voidTags: [],
         closingTags: ['li'],
         closingTagAncestorBreakers: {
-          li: ['ul']
-        }
+          li: ['ul'],
+        },
       })
 
       t.deepEqual(nodes, [
@@ -487,7 +486,7 @@ describe(`parser`, () => {
           attributes: [],
           position: {
             start: ps(0),
-            end: ps(55)
+            end: ps(55),
           },
           children: [
             {
@@ -496,7 +495,7 @@ describe(`parser`, () => {
               attributes: [],
               position: {
                 start: ps(4),
-                end: ps(50)
+                end: ps(50),
               },
               children: [
                 {
@@ -504,8 +503,8 @@ describe(`parser`, () => {
                   content: 'abc',
                   position: {
                     start: ps(8),
-                    end: ps(11)
-                  }
+                    end: ps(11),
+                  },
                 },
                 {
                   type: 'element',
@@ -513,7 +512,7 @@ describe(`parser`, () => {
                   attributes: [],
                   position: {
                     start: ps(11),
-                    end: ps(45)
+                    end: ps(45),
                   },
                   children: [
                     {
@@ -522,7 +521,7 @@ describe(`parser`, () => {
                       attributes: [],
                       position: {
                         start: ps(15),
-                        end: ps(40)
+                        end: ps(40),
                       },
                       children: [
                         {
@@ -531,7 +530,7 @@ describe(`parser`, () => {
                           attributes: [],
                           position: {
                             start: ps(21),
-                            end: ps(33)
+                            end: ps(33),
                           },
                           children: [
                             {
@@ -539,19 +538,19 @@ describe(`parser`, () => {
                               content: 'def',
                               position: {
                                 start: ps(25),
-                                end: ps(28)
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+                                end: ps(28),
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       ])
     }
 
@@ -562,8 +561,8 @@ describe(`parser`, () => {
         voidTags: [],
         closingTags: ['li'],
         closingTagAncestorBreakers: {
-          li: ['ul']
-        }
+          li: ['ul'],
+        },
       })
 
       t.deepEqual(nodes, [
@@ -573,7 +572,7 @@ describe(`parser`, () => {
           attributes: [],
           position: {
             start: ps(0),
-            end: ps(49)
+            end: ps(49),
           },
           children: [
             {
@@ -582,7 +581,7 @@ describe(`parser`, () => {
               attributes: [],
               position: {
                 start: ps(4),
-                end: ps(44)
+                end: ps(44),
               },
               children: [
                 {
@@ -590,8 +589,8 @@ describe(`parser`, () => {
                   content: 'abc',
                   position: {
                     start: ps(8),
-                    end: ps(11)
-                  }
+                    end: ps(11),
+                  },
                 },
                 {
                   type: 'element',
@@ -599,7 +598,7 @@ describe(`parser`, () => {
                   attributes: [],
                   position: {
                     start: ps(11),
-                    end: ps(39)
+                    end: ps(39),
                   },
                   children: [
                     {
@@ -608,7 +607,7 @@ describe(`parser`, () => {
                       attributes: [],
                       position: {
                         start: ps(15),
-                        end: ps(22)
+                        end: ps(22),
                       },
                       children: [
                         {
@@ -616,10 +615,10 @@ describe(`parser`, () => {
                           content: 'def',
                           position: {
                             start: ps(19),
-                            end: ps(22)
-                          }
-                        }
-                      ]
+                            end: ps(22),
+                          },
+                        },
+                      ],
                     },
                     {
                       type: 'element',
@@ -627,7 +626,7 @@ describe(`parser`, () => {
                       attributes: [],
                       position: {
                         start: ps(22),
-                        end: ps(34)
+                        end: ps(34),
                       },
                       children: [
                         {
@@ -635,17 +634,17 @@ describe(`parser`, () => {
                           content: 'ghi',
                           position: {
                             start: ps(26),
-                            end: ps(29)
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+                            end: ps(29),
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       ])
     }
   })
@@ -660,8 +659,8 @@ describe(`parser`, () => {
       closingTagAncestorBreakers: {
         tbody: ['table'],
         tr: ['table'],
-        td: ['table']
-      }
+        td: ['table'],
+      },
     })
 
     t.deepEqual(nodes, [
@@ -671,7 +670,7 @@ describe(`parser`, () => {
         attributes: [],
         position: {
           start: ps(0),
-          end: ps(96)
+          end: ps(96),
         },
         children: [
           {
@@ -680,7 +679,7 @@ describe(`parser`, () => {
             attributes: [],
             position: {
               start: ps(7),
-              end: ps(88)
+              end: ps(88),
             },
             children: [
               {
@@ -689,7 +688,7 @@ describe(`parser`, () => {
                 attributes: [],
                 position: {
                   start: ps(14),
-                  end: ps(80)
+                  end: ps(80),
                 },
                 children: [
                   {
@@ -698,7 +697,7 @@ describe(`parser`, () => {
                     attributes: [],
                     position: {
                       start: ps(18),
-                      end: ps(75)
+                      end: ps(75),
                     },
                     children: [
                       {
@@ -707,7 +706,7 @@ describe(`parser`, () => {
                         attributes: [],
                         position: {
                           start: ps(22),
-                          end: ps(70)
+                          end: ps(70),
                         },
                         children: [
                           {
@@ -716,7 +715,7 @@ describe(`parser`, () => {
                             attributes: [],
                             position: {
                               start: ps(29),
-                              end: ps(62)
+                              end: ps(62),
                             },
                             children: [
                               {
@@ -725,7 +724,7 @@ describe(`parser`, () => {
                                 attributes: [],
                                 position: {
                                   start: ps(36),
-                                  end: ps(54)
+                                  end: ps(54),
                                 },
                                 children: [
                                   {
@@ -734,24 +733,24 @@ describe(`parser`, () => {
                                     attributes: [],
                                     position: {
                                       start: ps(40),
-                                      end: ps(49)
+                                      end: ps(49),
                                     },
-                                    children: []
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+                                    children: [],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
     ])
   })
 
@@ -769,10 +768,9 @@ describe(`parser`, () => {
         content: 'x',
         position: {
           start: ps(4),
-          end: ps(str.length)
-        }
-      }
+          end: ps(str.length),
+        },
+      },
     ])
   })
-
 })

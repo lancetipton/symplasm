@@ -1,9 +1,8 @@
-
 * {
   font-family: monospace;
 }
 
-body { 
+body {
   overflow-x: hidden;
 }
 
@@ -76,7 +75,8 @@ label > span {
   background: #f1f1f1;
 }
 
-.pane > div, .pane > pre {
+.pane > div,
+.pane > pre {
   margin: 0;
   padding: 10px;
   background-color: #fefefe;

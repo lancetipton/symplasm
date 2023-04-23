@@ -1,13 +1,6 @@
-
-import {
-  startsWith,
-  endsWith,
-  stringIncludes,
-  arrayIncludes
-} from '../compat'
+import { startsWith, endsWith, stringIncludes, arrayIncludes } from '../compat'
 
 describe(`compat`, () => {
-
   test('startsWith() should pass simple cases', () => {
     const str = 'To be, or not to be, that is the question.'
     expect(startsWith(str, 'To be')).toBe(true)
@@ -32,15 +25,14 @@ describe(`compat`, () => {
   })
 
   test('arrayIncludes() should pass simple cases', () => {
-    expect(arrayIncludes([1, 2, 3], 2)).toBe(true)
-    expect(arrayIncludes([1, 2, 3], 4)).toBe(false)
-    expect(arrayIncludes([1, 2, 3], 3, 3)).toBe(false)
-    expect(arrayIncludes([1, 2, 3], 3, -1)).toBe(true)
-    expect(arrayIncludes([1, 2, NaN], NaN)).toBe(true)
+    expect(arrayIncludes([ 1, 2, 3 ], 2)).toBe(true)
+    expect(arrayIncludes([ 1, 2, 3 ], 4)).toBe(false)
+    expect(arrayIncludes([ 1, 2, 3 ], 3, 3)).toBe(false)
+    expect(arrayIncludes([ 1, 2, 3 ], 3, -1)).toBe(true)
+    expect(arrayIncludes([ 1, 2, NaN ], NaN)).toBe(true)
 
-    expect(arrayIncludes(['tag', 'name', 'test'], 'test')).toBe(true)
-    expect(arrayIncludes(['tag', 'name', 'test'], 'name')).toBe(true)
-    expect(arrayIncludes(['tag', 'name', 'test'], 'none')).toBe(false)
+    expect(arrayIncludes([ 'tag', 'name', 'test' ], 'test')).toBe(true)
+    expect(arrayIncludes([ 'tag', 'name', 'test' ], 'name')).toBe(true)
+    expect(arrayIncludes([ 'tag', 'name', 'test' ], 'none')).toBe(false)
   })
-  
 })
