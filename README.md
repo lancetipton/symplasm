@@ -1,6 +1,8 @@
 # Symplasm
 
-> https://github.com/lancetipton/symplasm
+> Github: https://github.com/lancetipton/symplasm
+
+> Demo: https://lancetipton.github.io/symplasm/
 
 > Parse HTML into td-VDom JS Object
 
